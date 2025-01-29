@@ -92,34 +92,64 @@
     <script src="scripts.js"></script> <!-- Link to your JavaScript file -->
     <script>
         // Function to fetch popular videos from a YouTube channel
-        function fetchPopularVideos(channelId, containerId) {
-            fetch(`https://www.googleapis.com/youtube/v3/search?key=AIzaSyAZ3I4UuzUCt_L3_6FtlZXRf7GQe9KOFP8&channelId=${channelId}&part=snippet&order=viewCount&maxResults=12`)
-                .then(response => {
-                    console.log('Response:', response);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Data:', data);
-                    const container = document.getElementById(containerId);
-                    data.items.forEach(item => {
-                        const videoId = item.id.videoId;
-                        const iframe = document.createElement('iframe');
-                        iframe.setAttribute('width', '560');
-                        iframe.setAttribute('height', '315');
-                        iframe.setAttribute('src', `https://www.youtube.com/embed/${videoId}`);
-                        iframe.setAttribute('frameborder', '0');
-                        iframe.setAttribute('allowfullscreen', '');
-                        const videoBox = document.createElement('div');
-                        videoBox.classList.add('video-box');
-                        videoBox.appendChild(iframe);
-                        container.appendChild(videoBox);
-                    });
-                })
-                .catch(error => console.error('Error fetching videos:', error));
+        function fetchPopularVideos(channelId, containerId) 
+        {
+            fetch(`https://www.googleapis.com/youtube/v3/search?key=AIzaSyAZ3I4UuzUCt_L3_6FtlZXRf7GQe9KOFP8&channelId=${channelId}&part=snippet&order=date&maxResults=12`)
+            .then(response => {
+                console.log('Response:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data:', data);
+                const container = document.getElementById(containerId);
+                data.items.forEach(item => {
+                const videoId = item.id.videoId;
+                const iframe = document.createElement('iframe');
+                iframe.setAttribute('width', '560');
+                iframe.setAttribute('height', '315');
+                iframe.setAttribute('src', `https://www.youtube.com/embed/${videoId}`);
+                iframe.setAttribute('frameborder', '0');
+                iframe.setAttribute('allowfullscreen', '');
+                const videoBox = document.createElement('div');
+                videoBox.classList.add('video-box');
+                videoBox.appendChild(iframe);
+                container.appendChild(videoBox);
+                });
+            })
+            .catch(error => console.error('Error fetching videos:', error));
         }
+
+        // Function to fetch top 5 songs from a Spotify artist
+        // function fetchTopSpotify(artistId, containerId) 
+        // {
+        //     fetch(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, {
+        //     headers: {
+        //         'Authorization': 'Bearer e32f0c38e7444d07bb7ebb1778da38b0'
+        //     }
+        //     })
+        //     .then(response => response.json())
+        //     .then(data => {
+        //     const container = document.getElementById(containerId);
+        //     data.tracks.slice(0, 5).forEach(track => {
+        //         const iframe = document.createElement('iframe');
+        //         iframe.setAttribute('src', `https://open.spotify.com/embed/track/${track.id}`);
+        //         iframe.setAttribute('width', '300');
+        //         iframe.setAttribute('height', '80');
+        //         iframe.setAttribute('frameborder', '0');
+        //         iframe.setAttribute('allowtransparency', 'true');
+        //         iframe.setAttribute('allow', 'encrypted-media');
+        //         const trackBox = document.createElement('div');
+        //         trackBox.classList.add('track-box');
+        //         trackBox.appendChild(iframe);
+        //         container.appendChild(trackBox);
+        //     });
+        //     })
+        //     .catch(error => console.error('Error fetching Spotify tracks:', error));
+        // }
 
         // Call the function for each video container
         fetchPopularVideos('UCInBHw_FWt6ROCGC8OdEnuA', 'video-container-1');
+        // fetchTopSpotify('5gIYSoNBguLSIr20A4TaMG', 'video-container-1');
     </script>
 </body>
 </html>
