@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vocal Practice Tool</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.26/Tone.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'Arial', sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+      margin-top: 60px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin: 20px 0;
+      justify-content: center;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #fff;
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 5px;
+    }
+    label {
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #34495e;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    button:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
+    }
+    .status {
+      margin-top: 10px;
+      font-style: italic;
+      color: #7f8c8d;
+    }
+    canvas {
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .instructions {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #ecf0f1;
+      border-radius: 8px;
+      max-width: 800px;
+      line-height: 1.5;
+    }
+    .piano-container {
+      width: 100%;
+      overflow-x: hidden; /* Remove horizontal scroll */
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .countdown {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      font-weight: bold;
+      color: #e67e22;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        padding: 10px 20px;
+        background-color: #2c3e50;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        transition: background-color 0.3s;
+    }
+    
+    .back-button:hover {
+        background-color: #34495e;
+    }
+  </style>
+</head>
+<body>
+    <a href="index.html" class="back-button">← Back</a>
+  <h1>Vocal Practice Tool</h1>
+  
+  <div class="instructions">
+    <p><strong>Instructions:</strong> Right-click on piano keys to set your vocal range (min and max). 
+    Adjust the difficulty and BPM using the sliders. Click "Start" to begin the exercise. 
+    The exercise will follow vocal patterns that move chromatically through your selected range.</p>
+  </div>
+  
+  <div class="controls">
+    <div class="control-group">
+      <label for="difficultySlider">Difficulty (0-5):</label>
+      <input type="range" id="difficultySlider" min="0" max="5" step="1" value="2">
+      <span id="difficultyValue">2</span>
+    </div>
+    
+    <div class="control-group">
+      <label for="bpmSlider">BPM:</label>
+      <input type="range" id="bpmSlider" min="60" max="300" step="1" value="150">
+      <span id="bpmValue">150</span>
+    </div>
+    
+    <div class="control-group">
+      <label for="countdownSlider">Pattern Countdown:</label>
+      <input type="range" id="countdownSlider" min="0" max="3" step="1" value="1">
+      <span id="countdownValue">1</span>
+      <div class="control-row">
+        <input type="checkbox" id="autoMeasureCheck">
+        <label for="autoMeasureCheck">Auto 4/4 Measure Alignment</label>
+      </div>
+    </div>
+    
+    <div class="control-group">
+      <button id="startButton">Start</button>
+      <button id="stopButton" disabled>Stop</button>
+    </div>
+  </div>
+  
+  <div class="status" id="statusMsg">Ready to start. Set your range by right-clicking on piano keys.</div>
+  
+  <div class="piano-container" id="pianoContainer">
+    <div id="countdownDisplay" class="countdown"></div>
+  </div>
+
+  <script>
+    let piano;
+    let minNote = 'C2';
+    let maxNote = 'E5';
+    let isPlaying = false;
+    let currentPattern = [];
+    let currentPatternName = "";
+    let patternSteps = [];
+    let currentPatternStep = 0;
+    let currentNoteIndex = 0;
+    let lastNoteTime = 0;
+    let difficulty = 2;
+    let bpm = 150;
+    let noteInterval;
+    let synth;
+    let activeKey = null;
+    let direction = 1; // 1 for ascending, -1 for descending
+    let currentRootIndex = 0;
+    let patternCompleted = false;
+    let countdownValue = 1;
+    let isCountingDown = false;
+    let countdownCount = 0;
+    let countdownInterval;
+    let autoMeasureAlignment = false;
+    let beatCount = 0;
+    let measurePosition = 0;
+    
+    // Note frequencies (C1 to C7)
+    const noteFrequencies = {
+      'C1': 32.70, 'C#1': 34.65, 'D1': 36.71, 'D#1': 38.89, 'E1': 41.20, 'F1': 43.65,
+      'F#1': 46.25, 'G1': 49.00, 'G#1': 51.91, 'A1': 55.00, 'A#1': 58.27, 'B1': 61.74,
+      'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'D#2': 77.78, 'E2': 82.41, 'F2': 87.31,
+      'F#2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'A2': 110.00, 'A#2': 116.54, 'B2': 123.47,
+      'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81, 'F3': 174.61,
+      'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'B3': 246.94,
+      'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23,
+      'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+      'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.25, 'F5': 698.46,
+      'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'A#5': 932.33, 'B5': 987.77,
+      'C6': 1046.50, 'C#6': 1108.73, 'D6': 1174.66, 'D#6': 1244.51, 'E6': 1318.51, 'F6': 1396.91,
+      'F#6': 1479.98, 'G6': 1567.98, 'G#6': 1661.22, 'A6': 1760.00, 'A#6': 1864.66, 'B6': 1975.53,
+      'C7': 2093.00
+    };
+    
+    const allNotes = Object.keys(noteFrequencies);
+    
+// Vocal practice patterns by difficulty - Enhanced version with more musical variety
+const vocalPatterns = {
+  0: [
+    { 
+      name: "Simple Scale (3 Notes)", 
+      steps: [0, 1, 2, 1, 0],  // e.g., C-D-E-D-C
+      variations: [
+        [0, 1, 2, 1, 0],
+        [0, 1, 2, 2, 1, 0],
+        [0, 1, 2, 0],
+        [0, 2, 1, 0]
+      ]
+    },
+    { 
+      name: "Simple Scale (5 Notes)", 
+      steps: [0, 1, 2, 3, 4, 3, 2, 1, 0],  // e.g., C-D-E-F-G-F-E-D-C
+      variations: [
+        [0, 1, 2, 3, 4, 3, 2, 1, 0],
+        [0, 2, 4, 2, 0],
+        [0, 1, 2, 3, 4, 4, 3, 2, 1, 0],
+        [0, 1, 2, 3, 4, 0]
+      ]
+    },
+    {
+      name: "Simple Repeat Pattern",
+      steps: [0, 0, 2, 2, 0, 0],  // e.g., C-C-E-E-C-C
+      variations: [
+        [0, 0, 2, 2, 0, 0],
+        [0, 2, 2, 0],
+        [0, 0, 0, 2, 2, 2, 0, 0, 0]
+      ]
+    }
+  ],
+  1: [
+    {
+      name: "Major Third Pattern", 
+      steps: [0, 2, 4, 2, 0],  // e.g., C-E-G-E-C
+      variations: [
+        [0, 2, 4, 2, 0],
+        [0, 2, 4, 4, 2, 0],
+        [0, 4, 2, 0],
+        [0, 2, 4, 0, 4, 2, 0]
+      ]
+    },
+    {
+      name: "Five-Note Major Scale", 
+      steps: [0, 2, 4, 5, 7, 5, 4, 2, 0],  // e.g., C-E-G-A-C-A-G-E-C (major scale)
+      variations: [
+        [0, 2, 4, 5, 7, 5, 4, 2, 0],
+        [0, 2, 4, 5, 7, 0],
+        [0, 4, 7, 4, 0],
+        [0, 2, 5, 7, 5, 2, 0]
+      ]
+    },
+    {
+      name: "Simple Minor Scale", 
+      steps: [0, 2, 3, 5, 7, 5, 3, 2, 0],  // e.g., C-D-Eb-F-G-F-Eb-D-C
+      variations: [
+        [0, 2, 3, 5, 7, 5, 3, 2, 0],
+        [0, 3, 5, 7, 5, 3, 0],
+        [0, 2, 3, 5, 7, 3, 0],
+        [0, 3, 7, 3, 0]
+      ]
+    },
+    {
+      name: "Simple Triad Pattern", 
+      steps: [0, 4, 7, 4, 0],  // e.g., C-E-G-E-C
+      variations: [
+        [0, 4, 7, 4, 0],
+        [0, 4, 7, 0],
+        [0, 7, 4, 0],
+        [0, 4, 0, 7, 4, 0]
+      ]
+    }
+  ],
+  2: [
+    {
+      name: "Major Arpeggio Pattern", 
+      steps: [0, 4, 7, 12, 7, 4, 0],  // e.g., C-E-G-C-G-E-C (major triad)
+      variations: [
+        [0, 4, 7, 12, 7, 4, 0],
+        [0, 4, 7, 12, 0],
+        [0, 7, 4, 12, 7, 0],
+        [0, 4, 7, 4, 12, 7, 4, 0],
+        [12, 7, 4, 0, 4, 7, 12]
+      ]
+    },
+    {
+      name: "Minor Scale Pattern", 
+      steps: [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2, 0],  // Natural minor scale
+      variations: [
+        [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2, 0],
+        [0, 3, 5, 7, 10, 12, 10, 7, 5, 3, 0],
+        [0, 2, 3, 5, 7, 12, 7, 5, 3, 2, 0],
+        [0, 3, 7, 10, 12, 7, 3, 0]
+      ]
+    },
+    {
+      name: "Major Scale Run", 
+      steps: [0, 2, 4, 5, 7, 9, 11, 12, 11, 9, 7, 5, 4, 2, 0],  // Full major scale
+      variations: [
+        [0, 2, 4, 5, 7, 9, 11, 12, 11, 9, 7, 5, 4, 2, 0],
+        [0, 2, 4, 7, 9, 12, 9, 7, 4, 2, 0],
+        [0, 4, 7, 11, 12, 7, 4, 0],
+        [0, 2, 5, 7, 9, 12, 9, 5, 2, 0]
+      ]
+    },
+    {
+      name: "Sus4 Pattern", 
+      steps: [0, 5, 7, 12, 7, 5, 0],  // e.g., C-F-G-C-G-F-C
+      variations: [
+        [0, 5, 7, 12, 7, 5, 0],
+        [0, 5, 7, 5, 12, 7, 5, 0],
+        [0, 7, 5, 12, 5, 0],
+        [0, 5, 12, 7, 0]
+      ]
+    }
+  ],
+  3: [
+    {
+      name: "Octave Jump Pattern", 
+      steps: [0, 12, 7, 4, 0, 4, 7, 12, 7, 4, 0],  // e.g., C-C'-G-E-C-E-G-C'-G-E-C
+      variations: [
+        [0, 12, 7, 4, 0, 4, 7, 12, 7, 4, 0],
+        [0, 7, 12, 7, 4, 0, 12, 0],
+        [0, 12, 4, 7, 12, 7, 0],
+        [0, 12, 7, 12, 4, 0, 7, 0],
+        [12, 7, 4, 0, 4, 12, 7, 0]
+      ]
+    },
+    {
+      name: "Minor Arpeggio Pattern", 
+      steps: [0, 3, 7, 12, 7, 3, 0],  // e.g., C-Eb-G-C-G-Eb-C (minor triad)
+      variations: [
+        [0, 3, 7, 12, 7, 3, 0],
+        [0, 3, 7, 10, 12, 10, 7, 3, 0], // Minor 7th
+        [0, 3, 7, 12, 15, 12, 7, 3, 0], // Minor with octave+3rd
+        [12, 7, 3, 0, 3, 7, 12],
+        [0, 7, 3, 12, 3, 0]
+      ]
+    },
+    {
+      name: "Pentatonic Run", 
+      steps: [0, 2, 4, 7, 9, 12, 9, 7, 4, 2, 0],  // e.g., C-D-E-G-A-C-A-G-E-D-C (pentatonic)
+      variations: [
+        [0, 2, 4, 7, 9, 12, 9, 7, 4, 2, 0],
+        [0, 4, 7, 9, 12, 9, 4, 0],
+        [0, 2, 7, 9, 12, 7, 2, 0],
+        [0, 4, 7, 12, 9, 7, 4, 0],
+        [0, 7, 9, 12, 7, 4, 0]
+      ]
+    },
+    {
+      name: "Minor Pentatonic", 
+      steps: [0, 3, 5, 7, 10, 12, 10, 7, 5, 3, 0],  // Minor pentatonic
+      variations: [
+        [0, 3, 5, 7, 10, 12, 10, 7, 5, 3, 0],
+        [0, 3, 7, 10, 12, 7, 3, 0],
+        [0, 5, 7, 10, 12, 10, 5, 0],
+        [0, 3, 5, 10, 12, 5, 3, 0],
+        [0, 3, 7, 10, 12, 10, 7, 0]
+      ]
+    }
+  ],
+  4: [
+    {
+      name: "Seventh Chord Pattern", 
+      steps: [0, 4, 7, 10, 12, 10, 7, 4, 0],  // e.g., C-E-G-Bb-C-Bb-G-E-C (dominant 7th)
+      variations: [
+        [0, 4, 7, 10, 12, 10, 7, 4, 0],
+        [0, 4, 7, 10, 14, 10, 7, 4, 0], // With 9th
+        [0, 7, 10, 12, 16, 12, 7, 0],   // With 11th
+        [0, 4, 10, 7, 12, 7, 10, 0],
+        [10, 7, 4, 0, 4, 7, 10, 12]
+      ]
+    },
+    {
+      name: "Melodic Minor Pattern", 
+      steps: [0, 2, 3, 5, 7, 9, 11, 12, 10, 8, 7, 5, 3, 2, 0],  // Melodic minor (up/down)
+      variations: [
+        [0, 2, 3, 5, 7, 9, 11, 12, 10, 8, 7, 5, 3, 2, 0],
+        [0, 2, 3, 5, 9, 11, 12, 7, 3, 0],
+        [0, 3, 5, 7, 9, 12, 9, 5, 0],
+        [0, 3, 7, 9, 11, 12, 7, 3, 0],
+        [0, 2, 3, 7, 9, 12, 9, 5, 3, 0]
+      ]
+    },
+    {
+      name: "Harmonic Minor Pattern", 
+      steps: [0, 2, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2, 0],  // Harmonic minor
+      variations: [
+        [0, 2, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2, 0],
+        [0, 3, 5, 8, 11, 12, 8, 5, 0],
+        [0, 3, 7, 11, 12, 7, 3, 0],
+        [0, 5, 8, 11, 12, 8, 0],
+        [0, 3, 7, 8, 11, 12, 7, 0]
+      ]
+    },
+    {
+      name: "Diminished Pattern", 
+      steps: [0, 3, 6, 9, 12, 9, 6, 3, 0],  // e.g., C-Eb-Gb-A-C-A-Gb-Eb-C (diminished)
+      variations: [
+        [0, 3, 6, 9, 12, 9, 6, 3, 0],
+        [0, 3, 6, 9, 12, 15, 12, 9, 6, 3, 0],
+        [0, 6, 9, 12, 9, 3, 0],
+        [0, 3, 9, 6, 12, 6, 0],
+        [9, 6, 3, 0, 3, 6, 9, 12]
+      ]
+    }
+  ],
+  5: [
+    {
+      name: "Complex Arpeggio Pattern", 
+      steps: [0, 4, 7, 11, 12, 16, 19, 16, 12, 11, 7, 4, 0],  // e.g., C-E-G-B-C-E-G-E-C-B-G-E-C (maj7 extended)
+      variations: [
+        [0, 4, 7, 11, 12, 16, 19, 16, 12, 11, 7, 4, 0],
+        [0, 4, 7, 11, 14, 16, 19, 14, 11, 7, 0],
+        [0, 7, 11, 14, 19, 14, 11, 7, 0],
+        [0, 4, 11, 16, 19, 16, 7, 4, 0],
+        [12, 16, 19, 16, 12, 7, 4, 0, 4, 7, 12]
+      ]
+    },
+    {
+      name: "Altered Scale Pattern", 
+      steps: [0, 1, 3, 4, 6, 8, 10, 12, 10, 8, 6, 4, 3, 1, 0],  // Altered scale
+      variations: [
+        [0, 1, 3, 4, 6, 8, 10, 12, 10, 8, 6, 4, 3, 1, 0],
+        [0, 1, 4, 6, 8, 10, 12, 8, 6, 1, 0],
+        [0, 3, 6, 10, 12, 10, 4, 1, 0],
+        [0, 1, 6, 10, 12, 6, 3, 0],
+        [10, 8, 6, 4, 1, 0, 4, 8, 12]
+      ]
+    },
+    {
+      name: "Whole Tone Scale", 
+      steps: [0, 2, 4, 6, 8, 10, 12, 10, 8, 6, 4, 2, 0],  // Whole tone scale
+      variations: [
+        [0, 2, 4, 6, 8, 10, 12, 10, 8, 6, 4, 2, 0],
+        [0, 4, 8, 12, 8, 4, 0],
+        [0, 2, 6, 10, 12, 6, 2, 0],
+        [0, 4, 8, 10, 12, 8, 4, 0],
+        [12, 10, 8, 6, 4, 2, 0, 2, 4, 6, 8, 10, 12]
+      ]
+    },
+    {
+      name: "Lydian Dominant Pattern", 
+      steps: [0, 2, 4, 6, 7, 9, 10, 12, 10, 9, 7, 6, 4, 2, 0],  // Lydian dominant scale
+      variations: [
+        [0, 2, 4, 6, 7, 9, 10, 12, 10, 9, 7, 6, 4, 2, 0],
+        [0, 4, 6, 9, 10, 12, 9, 6, 0],
+        [0, 2, 6, 7, 10, 12, 7, 2, 0],
+        [0, 4, 7, 10, 12, 10, 6, 4, 0],
+        [0, 6, 9, 12, 9, 6, 0]
+      ]
+    },
+    {
+      name: "Advanced Intervallic Pattern", 
+      steps: [0, 5, 9, 3, 7, 12, 7, 3, 9, 5, 0],  // Complex intervallic pattern
+      variations: [
+        [0, 5, 9, 3, 7, 12, 7, 3, 9, 5, 0],
+        [0, 5, 3, 9, 7, 12, 5, 0],
+        [12, 7, 3, 9, 5, 0, 5, 12],
+        [0, 9, 3, 7, 12, 3, 0],
+        [0, 5, 9, 0, 3, 7, 12, 7, 0]
+      ]
+    },
+    {
+      name: "Jazz Scale Run", 
+      steps: [0, 2, 4, 5, 7, 9, 10, 12, 14, 16, 17, 16, 14, 12, 10, 9, 7, 5, 4, 2, 0],  // Bebop scale
+      variations: [
+        [0, 2, 4, 5, 7, 9, 10, 12, 14, 16, 17, 16, 14, 12, 10, 9, 7, 5, 4, 2, 0],
+        [0, 2, 4, 7, 9, 10, 12, 14, 12, 9, 7, 4, 0],
+        [0, 4, 5, 7, 10, 12, 14, 17, 14, 10, 7, 0],
+        [0, 5, 7, 9, 10, 12, 10, 7, 5, 0],
+        [10, 9, 7, 5, 4, 2, 0, 2, 4, 7, 9, 12]
+      ]
+    },
+    {
+      name: "Chromatic Pattern", 
+      steps: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],  // Full chromatic
+      variations: [
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+        [0, 2, 3, 5, 6, 8, 9, 11, 12, 10, 8, 7, 5, 3, 2, 0],
+        [0, 1, 3, 4, 6, 7, 9, 10, 12, 9, 7, 4, 1, 0],
+        [0, 3, 4, 7, 8, 11, 12, 9, 6, 3, 0],
+        [12, 11, 9, 8, 6, 5, 3, 2, 0, 2, 4, 6, 8, 10, 12]
+      ]
+    }
+  ]
+};
+    
+    // P5.js setup function
+    function setup() {
+      let canvas = createCanvas(2000, 300); // Adjust the width to fit the entire piano
+      canvas.parent('pianoContainer');
+      piano = new Piano();
+      
+      // Create a more piano-like synthesizer
+      const pianoSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+      pianoSynth.set({
+        volume: -6,
+        oscillator: {
+          type: "triangle8"  // Use a richer waveform
+        },
+        envelope: {
+          attack: 0.01,      // Fast attack like a piano hammer strike
+          decay: 0.3,        // Quick initial decay
+          sustain: 0.2,      // Lower sustain level
+          release: 1.5       // Longer release for string resonance
+        }
+      });
+
+      // Add effects for more realism
+      const reverb = new Tone.Reverb({
+        decay: 2,
+        wet: 0.3
+      }).toDestination();
+
+      const eq = new Tone.EQ3({
+        low: -7,
+        mid: +1,
+        high: +3
+      }).connect(reverb);
+
+      pianoSynth.connect(eq);
+
+      // Maintain the synth reference
+      synth = pianoSynth;
+
+
+      // Set up control event listeners
+      document.getElementById('difficultySlider').addEventListener('input', function() {
+        difficulty = parseInt(this.value);
+        document.getElementById('difficultyValue').textContent = difficulty;
+      });
+      
+      document.getElementById('bpmSlider').addEventListener('input', function() {
+        bpm = parseInt(this.value);
+        document.getElementById('bpmValue').textContent = bpm;
+        if (isPlaying) {
+          updateNoteInterval();
+        }
+      });
+      
+      document.getElementById('countdownSlider').addEventListener('input', function() {
+        countdownValue = parseInt(this.value);
+        document.getElementById('countdownValue').textContent = countdownValue;
+      });
+      
+      document.getElementById('autoMeasureCheck').addEventListener('change', function() {
+        autoMeasureAlignment = this.checked;
+        document.getElementById('countdownSlider').disabled = autoMeasureAlignment;
+      });
+      
+      document.getElementById('startButton').addEventListener('click', startExercise);
+      document.getElementById('stopButton').addEventListener('click', stopExercise);
+    }
+    
+    function draw() {
+      background(240);
+      piano.display();
+      
+      // Play notes according to pattern and timing
+      if (isPlaying && !isCountingDown && millis() - lastNoteTime > noteInterval) {
+        playNextNote();
+        lastNoteTime = millis();
+      }
+      
+      // Display exercise status
+      textSize(16);
+      fill(50);
+      textAlign(LEFT, TOP);
+      
+      if (minNote && maxNote) {
+        text(`Range: ${minNote} to ${maxNote}`, 20, 20);
+      }
+      
+      if (isPlaying) {
+        text(`Current pattern: ${currentPatternName}`, 20, 50);
+        text(`Starting note: ${allNotes[currentRootIndex]}`, 20, 80);
+        if (autoMeasureAlignment) {
+          text(`Beat: ${beatCount % 4 + 1} of 4`, 20, 110);
+        }
+      }
+    }
+    
+    function mousePressed() {
+      if (mouseButton === RIGHT) {
+        const clickedNote = piano.getNoteAtPosition(mouseX, mouseY);
+        if (clickedNote) {
+          if (!minNote || !maxNote) {
+            // First selection or incomplete range
+            if (!minNote) {
+              minNote = clickedNote;
+              document.getElementById('statusMsg').textContent = `Min range set to ${minNote}. Right-click to set max range.`;
+            } else {
+              const minIndex = allNotes.indexOf(minNote);
+              const clickedIndex = allNotes.indexOf(clickedNote);
+              
+              if (clickedIndex <= minIndex) {
+                alert("Max range must be higher than min range!");
+              } else {
+                maxNote = clickedNote;
+                document.getElementById('statusMsg').textContent = `Range set: ${minNote} to ${maxNote}. Ready to start!`;
+              }
+            }
+          } else if (confirm("Reset range selection?")) {
+            // Properly reset both values when confirmed
+            minNote = null;
+            maxNote = null;
+            // After reset, set the first selection
+            minNote = clickedNote;
+            document.getElementById('statusMsg').textContent = `Min range set to ${minNote}. Right-click to set max range.`;
+          }
+          return false; // Prevent context menu
+        }
+      }
+    }
+    
+    // Prevent context menu on right-click
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    
+    function startExercise() {
+      if (!minNote || !maxNote) {
+        alert("Please set your vocal range first (right-click on piano keys)");
+        return;
+      }
+      
+      // Reset variables
+      isPlaying = true;
+      patternCompleted = false;
+      direction = 1;
+      beatCount = 0;
+      measurePosition = 0;
+      
+      // Set initial root note to minimum range
+      currentRootIndex = allNotes.indexOf(minNote);
+      
+      // Generate initial pattern
+      generatePattern();
+      
+      // Calculate note interval based on BPM
+      updateNoteInterval();
+      
+      // Update UI
+      document.getElementById('startButton').disabled = true;
+      document.getElementById('stopButton').disabled = false;
+      document.getElementById('statusMsg').textContent = "Exercise started!";
+      
+      // Start playing
+      lastNoteTime = millis();
+      currentPatternStep = 0;
+    }
+    
+    function stopExercise() {
+      isPlaying = false;
+      isCountingDown = false;
+      document.getElementById('countdownDisplay').textContent = "";
+      
+      if (activeKey) {
+        piano.setActiveKey(null);
+        activeKey = null;
+      }
+      
+      // Update UI
+      document.getElementById('startButton').disabled = false;
+      document.getElementById('stopButton').disabled = true;
+      document.getElementById('statusMsg').textContent = "Exercise stopped.";
+    }
+    
+    function updateNoteInterval() {
+      // Convert BPM to milliseconds between notes
+      const beatDuration = 60000 / bpm;
+      noteInterval = beatDuration;
+    }
+    
+    function generatePattern() {
+      // Choose a random pattern from the current difficulty level
+      const patternsForLevel = vocalPatterns[difficulty];
+      const randomPattern = patternsForLevel[Math.floor(Math.random() * patternsForLevel.length)];
+      
+      currentPatternName = randomPattern.name;
+      
+      // Select a random variation of the pattern
+      const variations = randomPattern.variations;
+      patternSteps = variations[Math.floor(Math.random() * variations.length)];
+      
+      // Reset pattern step
+      currentPatternStep = 0;
+    }
+    
+    function startCountdown() {
+      if (countdownValue === 0 && !autoMeasureAlignment) {
+        // Skip countdown if set to 0 and not using auto measure alignment
+        isCountingDown = false;
+        return;
+      }
+      
+      isCountingDown = true;
+      
+      // FIX: Calculate the correct number of beats for countdown
+      if (autoMeasureAlignment) {
+        // Calculate beats needed to reach the next measure start (0-3 beats)
+        countdownCount = (4 - beatCount % 4) % 4;
+        if (countdownCount === 0) {
+          // If we're already at beat 1, don't add a full measure
+          isCountingDown = false;
+          return;
+        }
+      } else {
+        countdownCount = countdownValue;
+      }
+      
+      updateCountdownDisplay();
+      lastNoteTime = millis(); // Reset the timer for consistent timing
+    }
+    
+    function updateCountdownDisplay() {
+      if (countdownCount <= 0) {
+        // FIX: Remove the extra beat by not showing "Go!" and immediately proceeding
+        document.getElementById('countdownDisplay').textContent = "";
+        isCountingDown = false;
+        lastNoteTime = millis(); // Reset timer when countdown completes
+        return;
+      }
+      
+      document.getElementById('countdownDisplay').textContent = countdownCount;
+      
+      setTimeout(() => {
+        countdownCount--;
+        beatCount++;
+        updateCountdownDisplay();
+      }, noteInterval);
+    }
+    
+    function playNextNote() {
+      if (!isPlaying) return;
+      
+      const minIndex = allNotes.indexOf(minNote);
+      const maxIndex = allNotes.indexOf(maxNote);
+      
+      beatCount++;
+      
+      // Get the current step in the pattern
+      const patternStep = patternSteps[currentPatternStep];
+      
+      // Calculate the actual note index
+      const noteIndex = currentRootIndex + patternStep;
+      
+      // Check if note is within range
+      if (noteIndex >= minIndex && noteIndex <= maxIndex) {
+        // Play the note
+        const note = allNotes[noteIndex];
+        piano.setActiveKey(note);
+        activeKey = note;
+        
+        // Play the note using Tone.js
+        synth.triggerAttackRelease(noteFrequencies[note], "8n");
+        
+        // Move to next step in pattern
+        currentPatternStep++;
+        
+        // If pattern is complete, move to next root note
+        if (currentPatternStep >= patternSteps.length) {
+          currentPatternStep = 0;
+          
+          // Move root note up or down chromatically
+          currentRootIndex += direction;
+          
+          // Check if we need to change direction
+          if (currentRootIndex + Math.max(...patternSteps) > maxIndex) {
+            direction = -1;
+          } else if (currentRootIndex < minIndex) {
+            // If we've gone below the minimum, we've completed a full cycle
+            currentRootIndex = minIndex;
+            direction = 1;
+            
+            // Generate a new pattern for the next cycle
+            generatePattern();
+          }
+          
+          // Start countdown before the next pattern iteration
+          startCountdown();
+          
+          // If we're counting down, don't process any further notes yet
+          if (isCountingDown) {
+            return;
+          }
+        }
+      } else {
+        // If current note is out of range, skip to next pattern step
+        currentPatternStep++;
+        if (currentPatternStep >= patternSteps.length) {
+          currentPatternStep = 0;
+          
+          // Start countdown before the next pattern iteration
+          startCountdown();
+          
+          // If we're counting down, don't process any further notes yet
+          if (isCountingDown) {
+            return;
+          }
+          
+          currentRootIndex += direction;
+          
+          // Check if we need to change direction
+          if (currentRootIndex + Math.max(...patternSteps) > maxIndex) {
+            direction = -1;
+          } else if (currentRootIndex < minIndex) {
+            currentRootIndex = minIndex;
+            direction = 1;
+            generatePattern();
+          }
+        }
+      }
+    }
+    
+    class Piano {
+      constructor() {
+        this.whiteKeyWidth = 40;
+        this.whiteKeyHeight = 150;
+        this.blackKeyWidth = 24;
+        this.blackKeyHeight = 100;
+        this.startX = 50;
+        this.startY = 100;
+        this.activeKey = null;
+        this.rangeKeys = { min: null, max: null };
+        this.visibleWidth = 850;
+        this.totalWidth = this.calculateTotalWidth();
+      }
+      
+      calculateTotalWidth() {
+        let whiteKeyCount = 0;
+        for (let note of allNotes) {
+          if (!note.includes('#')) {
+            whiteKeyCount++;
+          }
+        }
+        return this.startX + whiteKeyCount * this.whiteKeyWidth;
+      }
+      
+      display() {
+        // Calculate visible area offsets for scrolling
+        let scrollOffset = 0;
+        // if (this.activeKey) {
+        //   const noteIndex = allNotes.indexOf(this.activeKey);
+        //   let whiteKeyIndex = 0;
+        //   for (let i = 0; i < noteIndex; i++) {
+        //     if (!allNotes[i].includes('#')) {
+        //       whiteKeyIndex++;
+        //     }
+        //   }
+        //   const keyX = this.startX + whiteKeyIndex * this.whiteKeyWidth;
+          
+        //   // Center the active key
+        //   scrollOffset = keyX - this.visibleWidth / 2;
+        //   scrollOffset = constrain(scrollOffset, 0, this.totalWidth - this.visibleWidth);
+        // }
+        
+        push();
+        translate(-scrollOffset, 0);
+        
+        // Draw white keys first
+        let x = this.startX;
+        for (let i = 0; i < allNotes.length; i++) {
+          const note = allNotes[i];
+          if (!note.includes('#')) {
+            const isActive = note === this.activeKey;
+            const isMin = note === minNote;
+            const isMax = note === maxNote;
+            this.drawWhiteKey(x, this.startY, note, isActive, isMin, isMax);
+            x += this.whiteKeyWidth;
+          }
+        }
+        
+        // Draw black keys on top
+        x = this.startX;
+        let whiteKeyIndex = 0;
+        for (let i = 0; i < allNotes.length; i++) {
+          const note = allNotes[i];
+          if (!note.includes('#')) {
+            // If next note exists and is a black key
+            if (i + 1 < allNotes.length && allNotes[i + 1].includes('#')) {
+              const blackNote = allNotes[i + 1];
+              const isActive = blackNote === this.activeKey;
+              const isMin = blackNote === minNote;
+              const isMax = blackNote === maxNote;
+              this.drawBlackKey(x + this.whiteKeyWidth - this.blackKeyWidth / 2, 
+                               this.startY, blackNote, isActive, isMin, isMax);
+            }
+            x += this.whiteKeyWidth;
+            whiteKeyIndex++;
+          }
+        }
+        
+        pop();
+      }
+      
+      drawWhiteKey(x, y, note, isActive, isMin, isMax) {
+        if (isActive) {
+          fill(255, 165, 0); // Orange for active
+        } else if (isMin || isMax) {
+          fill(135, 206, 250); // Sky blue for range indicators
+        } else {
+          fill(255);
+        }
+        
+        stroke(0);
+        rect(x, y, this.whiteKeyWidth, this.whiteKeyHeight, 0, 0, 5, 5);
+        
+        // Draw note label
+        fill(0);
+        textSize(12);
+        textAlign(CENTER, BOTTOM);
+        text(note, x + this.whiteKeyWidth / 2, y + this.whiteKeyHeight - 5);
+      }
+      
+      drawBlackKey(x, y, note, isActive, isMin, isMax) {
+        if (isActive) {
+          fill(255, 140, 0); // Darker orange for active
+        } else if (isMin || isMax) {
+          fill(70, 130, 180); // Steel blue for range indicators
+        } else {
+          fill(30);
+        }
+        
+        stroke(0);
+        rect(x, y, this.blackKeyWidth, this.blackKeyHeight, 0, 0, 3, 3);
+        
+        // Draw note label on black keys
+        fill(255);
+        textSize(10);
+        textAlign(CENTER, BOTTOM);
+        text(note, x + this.blackKeyWidth / 2, y + this.blackKeyHeight - 5);
+      }
+      
+      getNoteAtPosition(mouseX, mouseY) {
+        // Check if mouse is within piano area
+        if (mouseY < this.startY || mouseY > this.startY + this.whiteKeyHeight) {
+          return null;
+        }
+        
+        // Check black keys first (they're on top)
+        if (mouseY < this.startY + this.blackKeyHeight) {
+          let x = this.startX;
+          let whiteKeyIndex = 0;
+          
+          for (let i = 0; i < allNotes.length; i++) {
+            const note = allNotes[i];
+            if (!note.includes('#')) {
+              // If next note exists and is a black key
+              if (i + 1 < allNotes.length && allNotes[i + 1].includes('#')) {
+                const blackKeyX = x + this.whiteKeyWidth - this.blackKeyWidth / 2;
+                if (mouseX >= blackKeyX && mouseX <= blackKeyX + this.blackKeyWidth) {
+                  return allNotes[i + 1]; // Return the black key note
+                }
+              }
+              x += this.whiteKeyWidth;
+              whiteKeyIndex++;
+            }
+          }
+        }
+        
+        // Then check white keys
+        let x = this.startX;
+        for (let i = 0; i < allNotes.length; i++) {
+          const note = allNotes[i];
+          if (!note.includes('#')) {
+            if (mouseX >= x && mouseX <= x + this.whiteKeyWidth) {
+              return note;
+            }
+            x += this.whiteKeyWidth;
+          }
+        }
+        
+        return null;
+      }
+      
+      setActiveKey(note) {
+        this.activeKey = note;
+      }
+    }
+  </script>
+</body>
+</html>
