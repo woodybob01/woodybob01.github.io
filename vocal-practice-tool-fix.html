@@ -20,7 +20,6 @@
     h1 {
       color: #2c3e50;
       margin-bottom: 10px;
-      margin-top: 60px;
     }
     .controls {
       display: flex;
@@ -99,26 +98,9 @@
       color: #e67e22;
       text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
-    .back-button {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        padding: 10px 20px;
-        background-color: #2c3e50;
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-        transition: background-color 0.3s;
-    }
-    
-    .back-button:hover {
-        background-color: #34495e;
-    }
   </style>
 </head>
 <body>
-    <a href="index.html" class="back-button">← Back</a>
   <h1>Vocal Practice Tool</h1>
   
   <div class="instructions">
@@ -777,15 +759,13 @@ const vocalPatterns = {
           // Move root note up or down chromatically
           currentRootIndex += direction;
           
-          // Check if we need to change direction
-          if (currentRootIndex + Math.max(...patternSteps) > maxIndex) {
+          // Check if we need to change direction - FIXED LOGIC HERE
+          if (direction === 1 && (currentRootIndex + Math.max(...patternSteps) > maxIndex)) {
             direction = -1;
-          } else if (currentRootIndex < minIndex) {
-            // If we've gone below the minimum, we've completed a full cycle
-            currentRootIndex = minIndex;
+            currentRootIndex -= 2; // Move back two steps to avoid getting stuck
+          } else if (direction === -1 && currentRootIndex < minIndex) {
             direction = 1;
-            
-            // Generate a new pattern for the next cycle
+            currentRootIndex = minIndex;
             generatePattern();
           }
           
@@ -814,11 +794,12 @@ const vocalPatterns = {
           currentRootIndex += direction;
           
           // Check if we need to change direction
-          if (currentRootIndex + Math.max(...patternSteps) > maxIndex) {
+          if (direction === 1 && (currentRootIndex + Math.max(...patternSteps) > maxIndex)) {
             direction = -1;
-          } else if (currentRootIndex < minIndex) {
-            currentRootIndex = minIndex;
+            currentRootIndex -= 2; // Move back two steps to avoid getting stuck
+          } else if (direction === -1 && currentRootIndex < minIndex) {
             direction = 1;
+            currentRootIndex = minIndex;
             generatePattern();
           }
         }
