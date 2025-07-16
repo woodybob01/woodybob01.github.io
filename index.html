@@ -514,66 +514,71 @@
             position: relative;
             letter-spacing: 0.1em;
             text-shadow:
-                2px 0 #ff00cc,
-                -2px 0 #00fff7,
-                0 2px #fffb00,
-                0 -2px #00fff7,
-                2px 2px #ff00cc,
-                -2px -2px #00fff7;
+            2px 0 #ff00cc,
+            -2px 0 #00fff7,
+            0 2px #fffb00,
+            0 -2px #00fff7,
+            2px 2px #ff00cc,
+            -2px -2px #00fff7;
             animation: glitch 0.8s infinite linear alternate-reverse;
             filter: blur(1px) contrast(2) saturate(2);
             user-select: none;
         }
+
+        .glitch-paused {
+            animation-play-state: paused;
+        }
+
         @keyframes glitch {
             0% {
-                transform: translate(0,0) skew(0deg);
-                opacity: 1;
-                filter: blur(1px) contrast(2) saturate(2);
+            transform: translate(0,0) skew(0deg);
+            opacity: 1;
+            filter: blur(1px) contrast(2) saturate(2);
             }
             10% {
-                transform: translate(-3px,2px) skew(-2deg);
-                opacity: 0.9;
-                filter: blur(2px) contrast(2) saturate(2);
+            transform: translate(-3px,2px) skew(-2deg);
+            opacity: 0.9;
+            filter: blur(2px) contrast(2) saturate(2);
             }
             20% {
-                transform: translate(3px,-2px) skew(2deg);
-                opacity: 0.8;
-                filter: blur(1.5px) contrast(2) saturate(2);
+            transform: translate(3px,-2px) skew(2deg);
+            opacity: 0.8;
+            filter: blur(1.5px) contrast(2) saturate(2);
             }
             30% {
-                transform: translate(-2px,3px) skew(-1deg);
-                opacity: 1;
-                filter: blur(2.5px) contrast(2) saturate(2);
+            transform: translate(-2px,3px) skew(-1deg);
+            opacity: 1;
+            filter: blur(2.5px) contrast(2) saturate(2);
             }
             40% {
-                transform: translate(2px,-3px) skew(1deg);
-                opacity: 0.85;
-                filter: blur(1.8px) contrast(2) saturate(2);
+            transform: translate(2px,-3px) skew(1deg);
+            opacity: 0.85;
+            filter: blur(1.8px) contrast(2) saturate(2);
             }
             50% {
-                transform: translate(-3px,2px) skew(-2deg);
-                opacity: 1;
-                filter: blur(2.5px) contrast(2) saturate(2);
+            transform: translate(-3px,2px) skew(-2deg);
+            opacity: 1;
+            filter: blur(2.5px) contrast(2) saturate(2);
             }
             60% {
-                transform: translate(3px,-2px) skew(2deg);
-                opacity: 0.9;
-                filter: blur(1px) contrast(2) saturate(2);
+            transform: translate(3px,-2px) skew(2deg);
+            opacity: 0.9;
+            filter: blur(1px) contrast(2) saturate(2);
             }
             70% {
-                transform: translate(-2px,3px) skew(-1deg);
-                opacity: 1;
-                filter: blur(2.5px) contrast(2) saturate(2);
+            transform: translate(-2px,3px) skew(-1deg);
+            opacity: 1;
+            filter: blur(2.5px) contrast(2) saturate(2);
             }
             80% {
-                transform: translate(2px,-3px) skew(1deg);
-                opacity: 0.8;
-                filter: blur(2px) contrast(2) saturate(2);
+            transform: translate(2px,-3px) skew(1deg);
+            opacity: 0.8;
+            filter: blur(2px) contrast(2) saturate(2);
             }
             100% {
-                transform: translate(0,0) skew(0deg);
-                opacity: 1;
-                filter: blur(1px) contrast(2) saturate(2);
+            transform: translate(0,0) skew(0deg);
+            opacity: 1;
+            filter: blur(1px) contrast(2) saturate(2);
             }
         }
     </style>
@@ -727,7 +732,6 @@
 }
 
 
-
 .sneeze {
     animation: sneezeEffect 1.5s ease-in-out infinite;
     transform-origin: center;
@@ -750,82 +754,72 @@
     </filter>
 </svg>
 
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="social-icons">
+            <a href="#" target="_blank"><i class="fab fa-youtube"></i></a>
+            <a href="#" target="_blank"><i class="fab fa-spotify"></i></a>
+            <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+            <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
+            <a href="#" target="_blank"><i class="fab fa-facebook"></i></a>
+        </div>
+        <p class="copyright">&copy; 2025 Aidan Wood. All Rights Reserved.</p>
+    </div>
+</footer>
+
 <script>
+let sneezeAnimationPaused = false;
+
+function pauseSneeze() {
+    sneezeAnimationPaused = true;
+    document.querySelectorAll('.text-row').forEach(row => {
+        row.style.animationPlayState = 'paused';
+    });
+}
+
+function resumeSneeze() {
+    sneezeAnimationPaused = false;
+    document.querySelectorAll('.text-row').forEach(row => {
+        row.style.animationPlayState = 'running';
+    });
+}
+
+// Background text animation
 document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('backgroundText');
-    const rows = 30;
-    const textsPerRow = 15;
     
-    for (let i = 0; i < rows; i++) {
-        const row = document.createElement('div');
-        row.className = 'text-row';
-        row.style.transform = `translateZ(${-i * 15}px)`; /* Increased depth from 10 to 15 */
-        
-        let rowContent = '';
-        for (let j = 0; j < textsPerRow; j++) {
-            rowContent += 'SATRAKING • ';
+    function createBackgroundText(rows, textsPerRow) {
+        for (let i = 0; i < rows; i++) {
+            const row = document.createElement('div');
+            row.className = 'text-row';
+            row.style.transform = `translateZ(${-i * 15}px)`;
+            
+            let rowContent = '';
+            for (let j = 0; j < textsPerRow; j++) {
+                rowContent += 'SATRAKING • ';
+            }
+            row.textContent = rowContent;
+            container.appendChild(row);
         }
-        row.textContent = rowContent;
-        container.appendChild(row);
     }
 
-    // Random glitch effect
-    setInterval(() => {
-        const randomRow = Math.floor(Math.random() * rows);
-        const rowElement = container.children[randomRow];
-        rowElement.classList.add('glitch');
-        setTimeout(() => rowElement.classList.remove('glitch'), 1500);
-    }, 4000);
-
-    // Random sneeze effect
-    setInterval(() => {
-        const randomRow = Math.floor(Math.random() * rows);
-        const rowElement = container.children[randomRow];
-        rowElement.classList.add('sneeze');
-        setTimeout(() => rowElement.classList.remove('sneeze'), 2000);
-    }, 6000);
-});
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('backgroundText');
-    const rows = 20;
-    const textsPerRow = 15;
-    
-    for (let i = 0; i < rows; i++) {
-        const row = document.createElement('div');
-        row.className = 'text-row';
-        row.style.transform = `translateZ(${i * 10}px)`;
-        
-        let rowContent = '';
-        for (let j = 0; j < textsPerRow; j++) {
-            rowContent += 'SATRAKING • ';
-        }
-        row.textContent = rowContent;
-        container.appendChild(row);
+    function setupEffects(rows) {
+        // Random sneeze effect
+        setInterval(() => {
+            const randomRow = Math.floor(Math.random() * rows);
+            const rowElement = container.children[randomRow];
+            rowElement.classList.add('sneeze');
+            setTimeout(() => rowElement.classList.remove('sneeze'), 2000);
+        }, 6000);
     }
 
-    // Random glitch effect
-    setInterval(() => {
-        const randomRow = Math.floor(Math.random() * rows);
-        const rowElement = container.children[randomRow];
-        rowElement.classList.add('glitch');
-        setTimeout(() => rowElement.classList.remove('glitch'), 300);
-    }, 2000);
-
-    // Random sneeze effect
-    setInterval(() => {
-        const randomRow = Math.floor(Math.random() * rows);
-        const rowElement = container.children[randomRow];
-        rowElement.classList.add('sneeze');
-        setTimeout(() => rowElement.classList.remove('sneeze'), 500);
-    }, 3000);
+    // Initialize background text
+    createBackgroundText(30, 15);
+    setupEffects(30);
 });
-</script>
 
-<script>
-// Optional: Show a message after submission using Formspree's redirect feature
+// Contact form handling
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('contactForm');
     form.addEventListener('submit', function(event) {
@@ -835,23 +829,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     });
 });
-</script>
-    
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="social-icons">
-                <a href="#" target="_blank"><i class="fab fa-youtube"></i></a>
-                <a href="#" target="_blank"><i class="fab fa-spotify"></i></a>
-                <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
-                <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
-                <a href="#" target="_blank"><i class="fab fa-facebook"></i></a>
-            </div>
-            <p class="copyright">&copy; 2025 Aidan Wood. All Rights Reserved.</p>
-        </div>
-    </footer>
-    
-    <script>
 
 // Event snippet for Outbound click conversion page
 function gtag_report_conversion(url) {
@@ -976,6 +953,9 @@ function loadSecondSpotifyRelease(containerId) {
         loadSingleSpotifyRelease('spotify-container');
         loadSecondSpotifyRelease('spotify-container');
     });
+    // Add global pause state for balls
+    let animationBallsPaused = false;
+
     document.addEventListener('DOMContentLoaded', function() {
         // Bouncing balls canvas (unchanged)
         const heroSection = document.getElementById('hero');
@@ -1012,13 +992,16 @@ function loadSecondSpotifyRelease(containerId) {
                 this.color = colors[Math.floor(Math.random() * colors.length)];
             }
             update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
-                    this.vx = -this.vx;
-                }
-                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
-                    this.vy = -this.vy;
+                // Only update if not paused
+                if (!animationBallsPaused) {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                        this.vx = -this.vx;
+                    }
+                    if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+                        this.vy = -this.vy;
+                    }
                 }
             }
             draw() {
@@ -1042,16 +1025,28 @@ function loadSecondSpotifyRelease(containerId) {
         for (let i = 0; i < 10; i++) {
             balls.push(new Ball());
         }
-        function animate() {
+        function animateBalls() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             for (const ball of balls) {
                 ball.update();
                 ball.draw();
             }
-            requestAnimationFrame(animate);
+            requestAnimationFrame(animateBalls);
         }
-        animate();
+        animateBalls();
     });
+
+    // Functions to control animation
+    function pauseBallAnimation() {
+        animationBallsPaused = true;
+    }
+
+    function resumeBallAnimation() {
+        animationBallsPaused = false;
+    }
+    // Add global pause state
+    let animationLaserPaused = false;
+
     document.addEventListener('DOMContentLoaded', function() {
         // Lasers canvas (unchanged except color palette)
         const musicSection = document.getElementById('music');
@@ -1109,18 +1104,21 @@ function loadSecondSpotifyRelease(containerId) {
                 this.active = true;
             }
             update() {
-                const dx = Math.cos(this.angle) * this.speed;
-                const dy = Math.sin(this.angle) * this.speed;
-                this.x += dx;
-                this.y += dy;
-                const boundary = 200;
-                if (
-                    this.x < -this.length - boundary || 
-                    this.x > canvas.width + this.length + boundary ||
-                    this.y < -this.length - boundary || 
-                    this.y > canvas.height + this.length + boundary
-                ) {
-                    this.reset(this.fromLeft);
+                // Only update if not paused
+                if (!animationLaserPaused) {
+                    const dx = Math.cos(this.angle) * this.speed;
+                    const dy = Math.sin(this.angle) * this.speed;
+                    this.x += dx;
+                    this.y += dy;
+                    const boundary = 200;
+                    if (
+                        this.x < -this.length - boundary || 
+                        this.x > canvas.width + this.length + boundary ||
+                        this.y < -this.length - boundary || 
+                        this.y > canvas.height + this.length + boundary
+                    ) {
+                        this.reset(this.fromLeft);
+                    }
                 }
             }
             draw() {
@@ -1153,16 +1151,121 @@ function loadSecondSpotifyRelease(containerId) {
             lasers.push(new Laser(i % 2 === 0));
         }
         function animateLasers() {
-            ctx.fillStyle = 'rgba(0,0,0,0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            for (const laser of lasers) {
-                laser.update();
-                laser.draw();
+            if (!animationLaserPaused) {
+                ctx.fillStyle = 'rgba(0,0,0,0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                for (const laser of lasers) {
+                    laser.update();
+                    laser.draw();
+                }
             }
             requestAnimationFrame(animateLasers);
         }
+        pauseLaserAnimation();
         animateLasers();
     });
+
+    // Functions to control animation
+    function pauseLaserAnimation() {
+        animationLaserPaused = true;
+    }
+
+    function resumeLaserAnimation() {
+        animationLaserPaused = false;
+    }
+
+
+
+
+    // Utility: Check if an element is in the viewport
+function isSectionInView(sectionId) {
+    const el = document.getElementById(sectionId);
+    if (!el) return false;
+    const rect = el.getBoundingClientRect();
+    return rect.top < window.innerHeight && rect.bottom > 0;
+}
+
+// Example: State for each section
+let heroActive = true;
+let aboutActive = true;
+let musicActive = true;
+let contactActive = true;
+
+// Main scroll handler
+function handleSectionVisibility() {
+    // Home/Hero section
+    if (isSectionInView('hero')) {
+        if (!heroActive) {
+            // Enable hero features (e.g., start balls animation)
+            heroActive = true;
+            resumeBallAnimation();
+        }
+    } else {
+        if (heroActive) {
+            // Disable hero features (e.g., pause balls animation)
+            heroActive = false;
+            pauseBallAnimation();
+        }
+    }
+
+    // About section
+    if (isSectionInView('about')) {
+        if (!aboutActive) {
+            aboutActive = true;
+            // ...enable about features...
+            // Enable glitch text animation by removing pause
+            document.querySelectorAll('.glitch-keyword').forEach(el => {
+                el.classList.remove('glitch-paused');
+            });
+    } else {
+        if (aboutActive) {
+            aboutActive = false;
+            // ...disable about features...
+            // Pause glitch text animation
+            document.querySelectorAll('.glitch-keyword').forEach(el => {
+                el.classList.add('glitch-paused');
+            });
+        }
+        }
+    }
+
+    // Music section
+    if (isSectionInView('music')) {
+        if (!musicActive) {
+            musicActive = true;
+            // ...enable music features...
+            resumeLaserAnimation();
+
+        }
+    } else {
+        if (musicActive) {
+            musicActive = false;
+            // ...disable music features...
+            pauseLaserAnimation();
+
+        }
+    }
+
+    // Contact section
+    if (isSectionInView('contact')) {
+        if (!contactActive) {
+            contactActive = true;
+            // ...enable contact features...
+            resumeSneeze();
+        }
+    } else {
+        if (contactActive) {
+            contactActive = false;
+            // ...disable contact features...
+            pauseSneeze();
+        }
+    }
+}
+
+// Attach the scroll event (and run once on load)
+window.addEventListener('scroll', handleSectionVisibility);
+window.addEventListener('resize', handleSectionVisibility);
+document.addEventListener('DOMContentLoaded', handleSectionVisibility);
     </script>
 </body>
 </html>
