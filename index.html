@@ -661,7 +661,7 @@
             <h2>Get In Touch</h2>
         </div>
         <div class="contact-form">
-            <!-- Formspree integration: replace {your_form_id} with your actual Formspree form ID -->
+            <!-- Formspree integration -->
             <form id="contactForm" action="https://formspree.io/f/mdkdoadv" method="POST">
                 <div class="form-group">
                     <label for="name">Name</label>
@@ -683,8 +683,147 @@
             </form>
             <div id="formStatus" style="margin-top: 20px; text-align: center;"></div>
         </div>
+            <div id="backgroundText" class="background-text-container"></div>
+
     </div>
+
 </section>
+
+<style>
+.background-text-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+    perspective: 1000px;
+    opacity: 0.5; /* Added 50% transparency */
+}
+
+.text-row {
+    white-space: nowrap;
+    color: #fffb00;
+    font-size: 1.5em;
+    text-shadow: 1px 1px #ff00cc, -1px -1px #00fff7;
+    opacity: 0.4; /* Reduced from 0.8 to 0.4 for additional transparency */
+    transform-style: preserve-3d;
+    animation: textPerspective 30s infinite alternate;
+    margin-bottom: 10px;
+    filter: url(#vhs-filter) blur(0.5px);
+}
+
+@keyframes textPerspective {
+    0%, 100% {
+        transform: translateZ(-50px);
+        filter: url(#vhs-filter) contrast(1.5) saturate(1.5) blur(0.5px);
+    }
+    50% {
+        transform: translateZ(-50px);
+        filter: url(#vhs-filter) contrast(1.5) saturate(1.5) blur(0.5px);
+    }
+}
+
+
+
+.sneeze {
+    animation: sneezeEffect 1.5s ease-in-out infinite;
+    transform-origin: center;
+    filter: saturate(300%) contrast(200%) brightness(150%);
+}
+
+@keyframes sneezeEffect {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.02); opacity: 0.7; }
+}
+
+</style>
+
+<!-- Add SVG filter definition -->
+<svg style="display: none;">
+    <filter id="vhs-filter">
+        <feTurbulence type="fractalNoise" baseFrequency="0.3" numOctaves="2" stitchTiles="stitch"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.2 0"/>
+        <feBlend mode="multiply" in2="SourceGraphic"/>
+    </filter>
+</svg>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('backgroundText');
+    const rows = 30;
+    const textsPerRow = 15;
+    
+    for (let i = 0; i < rows; i++) {
+        const row = document.createElement('div');
+        row.className = 'text-row';
+        row.style.transform = `translateZ(${-i * 15}px)`; /* Increased depth from 10 to 15 */
+        
+        let rowContent = '';
+        for (let j = 0; j < textsPerRow; j++) {
+            rowContent += 'SATRAKING • ';
+        }
+        row.textContent = rowContent;
+        container.appendChild(row);
+    }
+
+    // Random glitch effect
+    setInterval(() => {
+        const randomRow = Math.floor(Math.random() * rows);
+        const rowElement = container.children[randomRow];
+        rowElement.classList.add('glitch');
+        setTimeout(() => rowElement.classList.remove('glitch'), 1500);
+    }, 4000);
+
+    // Random sneeze effect
+    setInterval(() => {
+        const randomRow = Math.floor(Math.random() * rows);
+        const rowElement = container.children[randomRow];
+        rowElement.classList.add('sneeze');
+        setTimeout(() => rowElement.classList.remove('sneeze'), 2000);
+    }, 6000);
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('backgroundText');
+    const rows = 20;
+    const textsPerRow = 15;
+    
+    for (let i = 0; i < rows; i++) {
+        const row = document.createElement('div');
+        row.className = 'text-row';
+        row.style.transform = `translateZ(${i * 10}px)`;
+        
+        let rowContent = '';
+        for (let j = 0; j < textsPerRow; j++) {
+            rowContent += 'SATRAKING • ';
+        }
+        row.textContent = rowContent;
+        container.appendChild(row);
+    }
+
+    // Random glitch effect
+    setInterval(() => {
+        const randomRow = Math.floor(Math.random() * rows);
+        const rowElement = container.children[randomRow];
+        rowElement.classList.add('glitch');
+        setTimeout(() => rowElement.classList.remove('glitch'), 300);
+    }, 2000);
+
+    // Random sneeze effect
+    setInterval(() => {
+        const randomRow = Math.floor(Math.random() * rows);
+        const rowElement = container.children[randomRow];
+        rowElement.classList.add('sneeze');
+        setTimeout(() => rowElement.classList.remove('sneeze'), 500);
+    }, 3000);
+});
+</script>
+
 <script>
 // Optional: Show a message after submission using Formspree's redirect feature
 document.addEventListener('DOMContentLoaded', function() {
@@ -768,13 +907,16 @@ function loadSingleSpotifyRelease(containerId) {
         container.appendChild(link);
 }
 
+
+
 function loadSecondSpotifyRelease(containerId) {
         const container = document.getElementById(containerId);
         const link = document.createElement('a');
         link.href = 'https://distrokid.com/hyperfollow/saturaking/the-ship';
         link.target = '_blank';
         link.onclick = function() {
-                return gtag_report_conversion(this.href);
+            
+            return gtag_report_conversion(this.href);
         };
         link.style.display = 'block';
         link.style.width = '100%';
