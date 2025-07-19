@@ -630,7 +630,9 @@
                     </p>
                     <br>
                     <p style="text-align:center;">
-                        MY JOURNEY BEGAN IN THE DAWN OF <span class="glitch-keyword">2020</span>.  .  . THERE IS NO <span class="glitch-keyword">TIME</span>
+                        MY JOURNEY BEGAN IN THE DAWN OF <span class="glitch-keyword">2020</span>.  .  . BUT THERE IS NO <span class="glitch-keyword">TIME</span>. 
+                        <br>
+                        <span class="glitch-keyword">THE SHIP</span> IS ALMOST HERE.
                     </p>
                 </div>
             </div>
@@ -1212,20 +1214,18 @@ function handleSectionVisibility() {
     if (isSectionInView('about')) {
         if (!aboutActive) {
             aboutActive = true;
-            // ...enable about features...
             // Enable glitch text animation by removing pause
             document.querySelectorAll('.glitch-keyword').forEach(el => {
                 el.classList.remove('glitch-paused');
             });
+        }
     } else {
         if (aboutActive) {
             aboutActive = false;
-            // ...disable about features...
             // Pause glitch text animation
             document.querySelectorAll('.glitch-keyword').forEach(el => {
                 el.classList.add('glitch-paused');
             });
-        }
         }
     }
 
