@@ -504,7 +504,80 @@
             nav ul li {
                 margin: 10px 0;
             }
+            
+            section {
+                padding: 60px 0; /* Reduce padding */
+                min-height: auto; /* Allow sections to be shorter */
+            }
         }
+        /* Add smaller device breakpoint */
+        @media (max-width: 480px) {
+            .hero-content h1 {
+                font-size: 32px;
+            }
+            
+            .hero-content p {
+                font-size: 16px;
+            }
+            
+            .section-heading h2 {
+                font-size: 28px;
+            }
+            
+            .hero-btn, .submit-btn {
+                padding: 12px 24px;
+                font-size: 16px;
+            }
+            
+            section {
+                padding: 40px 0;
+                margin: 20px auto; /* Reduce margin between sections */
+                border-width: 2px;
+            }
+            
+            .about-text {
+                font-size: 1em; /* Smaller font size */
+            }
+            
+            .glitch-keyword {
+                font-size: 1.6em; /* Smaller glitch text */
+            }
+            
+            #about, #music, #contact {
+                padding: 30px 15px; /* Reduce padding */
+            }
+            
+            .social-icons a {
+                font-size: 24px;
+                margin: 0 8px;
+            }
+        }
+
+        @media (max-width: 768px) {
+    /* Simplify background patterns */
+    body {
+        background-size: 200%; /* Make pattern smaller */
+    }
+    
+    body::before, body::after {
+        opacity: 0.7; /* Reduce intensity of overlays */
+    }
+    
+    .text-row {
+        font-size: 1.2em; /* Smaller background text */
+    }
+    
+    /* Reduce filter intensity */
+    .video-box, .track-box, header, footer {
+        filter: contrast(1.5) saturate(1.5); /* Less intense */
+    }
+    
+    /* Reduce box shadows */
+    #about, #music, #contact {
+        box-shadow: 0 0 20px rgba(255,0,204,0.5);
+    }
+}
+
         /* Glitch keyword effect (overrides) */
         .glitch-keyword {
             display: inline-block;
@@ -834,16 +907,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Event snippet for Outbound click conversion page
 function gtag_report_conversion(url) {
-    var callback = function () {
-        if (typeof(url) != 'undefined') {
-            window.location = url;
-        }
-    };
     gtag('event', 'conversion', {
-            'send_to': 'AW-17357999395/ZBQaCL7I8vEaEKOa-NRA',
-            'event_callback': callback
+        'send_to': 'AW-17357999395/ZBQaCL7I8vEaEKOa-NRA'
     });
-    return false;
+    // Don't return false - this will allow the normal link behavior to work
+    // The target="_blank" will open in a new tab
+    return true; 
 }
 
 function loadSingleSpotifyRelease(containerId) {
@@ -853,12 +922,14 @@ function loadSingleSpotifyRelease(containerId) {
         link.href = 'https://open.spotify.com/track/4MZXbzwiUfKqyBuDwNt2Uk?si=ef1d1569965246b7';
         link.target = '_blank';
         link.onclick = function() {
-                return gtag_report_conversion(this.href);
+            gtag_report_conversion(this.href);
+            // Don't return false - allow normal link behavior
+            return true; 
         };
         link.style.display = 'block';
         link.style.width = '100%';
         link.style.height = '350px';
-        link.style.background = 'linear-gradient(90deg, #ff00cc 0%, #00fff7 100%)';
+        link.style.background = 'linear-gradient(90deg, #ff00cc, #00fff7, #fffb00)';
         link.style.borderRadius = '20px';
         link.style.boxShadow = '0 0 40px #ff00cc, 0 0 20px #00fff7';
         link.style.border = '4px solid #fffb00';
@@ -894,8 +965,9 @@ function loadSecondSpotifyRelease(containerId) {
         link.href = 'https://distrokid.com/hyperfollow/saturaking/the-ship';
         link.target = '_blank';
         link.onclick = function() {
-            
-            return gtag_report_conversion(this.href);
+            gtag_report_conversion(this.href);
+            // Don't return false - allow normal link behavior  
+            return true;
         };
         link.style.display = 'block';
         link.style.width = '100%';
