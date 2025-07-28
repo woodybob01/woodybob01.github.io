@@ -572,7 +572,7 @@
             0 -2px #00fff7,
             2px 2px #ff00cc,
             -2px -2px #00fff7;
-            animation: glitch 0.8s infinite linear alternate-reverse;
+            animation: glitch 1.7s infinite linear alternate-reverse; /* 4x slower */
             filter: blur(1px) contrast(2) saturate(2);
             user-select: none;
         }
@@ -927,12 +927,32 @@ function loadSingleSpotifyRelease(containerId) {
         link.style.fontWeight = 'bold';
         link.style.color = '#fffb00';
         link.style.textShadow = '2px 2px #ff00cc, -2px -2px #00fff7, 0 0 8px #fffb00';
-        link.innerHTML = `
+        
+        // Add responsive adjustments
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+            link.style.height = '180px';
+            link.style.fontSize = '1.2em'; // Much smaller font
+            link.style.boxShadow = '0 0 20px #ff00cc, 0 0 10px #00fff7';
+            
+            // Different HTML structure for mobile
+            link.innerHTML = `
+                <div class="spotify-mobile-text">
+                    <i class="fab fa-spotify"></i>
+                    <div>NERVES<br>SATURA KING</div>
+                    <span>Click to listen on Spotify</span>
+                </div>
+            `;
+        } else {
+            // Original HTML for desktop
+            link.innerHTML = `
                 <i class="fab fa-spotify" style="font-size:2em;margin-right:20px;"></i>
                 NERVES - SATURA KING<br>
                 <span style="font-size:0.6em;font-weight:normal;color:#fff;text-shadow:none;"
                 >Click to listen on Spotify</span>
-        `;
+            `;
+        }
+        
         container.appendChild(link);
 }
 
@@ -970,12 +990,32 @@ function loadSecondSpotifyRelease(containerId) {
         link.style.fontWeight = 'bold';
         link.style.color = '#00fff7';
         link.style.textShadow = '2px 2px #ff00cc, -2px -2px #fffb00, 0 0 15px #00fff7';
-        link.innerHTML = `
+        
+        // Add responsive adjustments
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+            link.style.height = '180px';
+            link.style.fontSize = '1.2em'; // Much smaller font
+            link.style.boxShadow = '0 0 30px #fffb00, 0 0 15px #ff00cc';
+            
+            // Different HTML structure for mobile
+            link.innerHTML = `
+                <div class="spotify-mobile-text">
+                    <i class="fab fa-spotify"></i>
+                    <div>THE SHIP<br>SATURA KING</div>
+                    <span>Coming Soon</span>
+                </div>
+            `;
+        } else {
+            // Original HTML for desktop
+            link.innerHTML = `
                 <i class="fab fa-spotify" style="font-size:2em;margin-right:20px;text-shadow:0 0 20px #fffb00"></i>
                 THE SHIP - SATURA KING<br>
                 <span style="font-size:0.6em;font-weight:normal;color:#fff;text-shadow:0 0 10px #000"
                 >Coming Soon</span>
-        `;
+            `;
+        }
+        
         container.appendChild(link);
 }
 
@@ -1199,7 +1239,7 @@ function loadSecondSpotifyRelease(containerId) {
             }
         }
         const lasers = [];
-        const numLasers = 16;
+        const numLasers = 8;
         for (let i = 0; i < numLasers; i++) {
             lasers.push(new Laser(i % 2 === 0));
         }
