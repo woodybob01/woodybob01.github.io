@@ -477,104 +477,83 @@
         /* Responsive Design */
         @media (max-width: 768px) {
             .hero-content h1 {
-                font-size: 40px;
+                text-shadow: 2px 2px #ff00cc, -2px -2px #00fff7, 0 0 10px #fffb00;
             }
             
             .hero-content p {
-                font-size: 18px;
+                text-shadow: 1px 1px #ff00cc, -1px -1px #00fff7;
+                filter: contrast(1.3) saturate(1.3); /* Reduce filter intensity */
             }
             
-            .about-content {
-                flex-direction: column;
+            /* Reduce global filter intensity */
+            section, header, footer, .hero-content, .about-text, .glitch-keyword {
+                filter: contrast(1.2) saturate(1.2) !important;
             }
             
-            .about-image {
-                margin-top: 30px;
-            }
-            
-            #youtube-container, #spotify-container {
-                grid-template-columns: 1fr;
-            }
-            
-            nav ul {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            nav ul li {
-                margin: 10px 0;
-            }
-            
-            section {
-                padding: 60px 0; /* Reduce padding */
-                min-height: auto; /* Allow sections to be shorter */
-            }
-        }
-        /* Add smaller device breakpoint */
-        @media (max-width: 480px) {
-            .hero-content h1 {
-                font-size: 32px;
-            }
-            
-            .hero-content p {
-                font-size: 16px;
-            }
-            
-            .section-heading h2 {
-                font-size: 28px;
-            }
-            
-            .hero-btn, .submit-btn {
-                padding: 12px 24px;
-                font-size: 16px;
-            }
-            
-            section {
-                padding: 40px 0;
-                margin: 20px auto; /* Reduce margin between sections */
-                border-width: 2px;
-            }
-            
-            .about-text {
-                font-size: 1em; /* Smaller font size */
-            }
-            
+            /* Make text more readable */
             .glitch-keyword {
-                font-size: 1.6em; /* Smaller glitch text */
+                text-shadow: 1px 0 #ff00cc, -1px 0 #00fff7;
+                filter: blur(0.5px) contrast(1.3) saturate(1.3) !important;
+            }
+            
+            body {
+                background-size: 300%; /* Make background pattern smaller */
+                background-attachment: scroll; /* Fix for mobile zooming */
+            }
+
+            /* Add to your existing mobile styles */
+    
+    /* Improve overall scaling */
+    .container {
+        padding: 0 10px;
+    }
+    
+    section {
+        padding: 60px 0 40px;
+        min-height: 80vh; /* Allow sections to be shorter */
+    }
+    
+    #about, #music, #contact {
+        margin: 30px auto;
+        padding: 30px 15px;
+    }
+        }
+        /* Add even smaller device handling */
+        @media (max-width: 480px) {
+            section {
+                padding: 40px 0 30px;
             }
             
             #about, #music, #contact {
-                padding: 30px 15px; /* Reduce padding */
-            }
-            
-            .social-icons a {
-                font-size: 24px;
-                margin: 0 8px;
+                margin: 20px auto;
+                padding: 20px 10px;
             }
         }
 
         @media (max-width: 768px) {
-    /* Simplify background patterns */
-    body {
-        background-size: 200%; /* Make pattern smaller */
+    /* Other existing mobile styles */
+    
+    /* Fix for header taking too much space */
+    header {
+        padding: 10px 0;
     }
     
-    body::before, body::after {
-        opacity: 0.7; /* Reduce intensity of overlays */
+    nav ul {
+        /* Keep horizontal but optimize for mobile */
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
     }
     
-    .text-row {
-        font-size: 1.2em; /* Smaller background text */
+    nav ul li {
+        margin: 5px 6px;
     }
     
-    /* Reduce filter intensity */
-    .video-box, .track-box, header, footer {
-        filter: contrast(1.5) saturate(1.5); /* Less intense */
-    }
-    
-    /* Reduce box shadows */
-    #about, #music, #contact {
-        box-shadow: 0 0 20px rgba(255,0,204,0.5);
+    nav ul li a {
+        font-size: 14px;
+        letter-spacing: 0.05em;
+        /* Reduce text-shadow intensity */
+        text-shadow: 1px 1px 0 #ff00cc, -1px -1px 0 #00fff7, 0 0 4px #fffb00;
     }
 }
 
