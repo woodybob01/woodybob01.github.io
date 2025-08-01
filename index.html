@@ -14,7 +14,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Music Portfolio</title>
+    <title>SATURA KING'S GROUNDS</title>
     <style>
         /* Base Styles */
         * {
@@ -961,7 +961,7 @@ function loadSingleSpotifyRelease(containerId) {
 function loadSecondSpotifyRelease(containerId) {
         const container = document.getElementById(containerId);
         const link = document.createElement('a');
-        link.href = 'https://distrokid.com/hyperfollow/saturaking/the-ship';
+        link.href = 'https://open.spotify.com/track/00mUa1h6swAQyi45YWbGkb?si=3299516a35344609';
         link.target = '_blank';
         link.onclick = function() {
             gtag_report_conversion(this.href);
@@ -1003,7 +1003,7 @@ function loadSecondSpotifyRelease(containerId) {
                 <div class="spotify-mobile-text">
                     <i class="fab fa-spotify"></i>
                     <div>THE SHIP<br>SATURA KING</div>
-                    <span>Coming Soon</span>
+                    <span style="font-weight:bold;color:#fff;text-shadow:2px 2px #000">OUT NOW!!!</span>
                 </div>
             `;
         } else {
@@ -1011,8 +1011,8 @@ function loadSecondSpotifyRelease(containerId) {
             link.innerHTML = `
                 <i class="fab fa-spotify" style="font-size:2em;margin-right:20px;text-shadow:0 0 20px #fffb00"></i>
                 THE SHIP - SATURA KING<br>
-                <span style="font-size:0.6em;font-weight:normal;color:#fff;text-shadow:0 0 10px #000"
-                >Coming Soon</span>
+                <span style="font-size:0.6em;font-weight:bold;color:#fff;text-shadow:2px 2px #000"
+                >OUT NOW!!!</span>
             `;
         }
         
