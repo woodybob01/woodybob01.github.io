@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chess Square Trainer</title>
+  <style>
+    :root {
+      --bg: #262421;
+      --panel: #312e2b;
+      --panel-2: #3a3733;
+      --text: #f0f0f0;
+      --muted: #b7b7b7;
+      --light-square: #ebecd0;
+      --dark-square: #779556;
+      --highlight: rgba(246, 246, 105, 0.72);
+      --correct: #81b64c;
+      --wrong: #c93c3c;
+      --button: #45413d;
+      --button-hover: #57524d;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, #383531 0%, var(--bg) 55%);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: min(1100px, 100%);
+      display: grid;
+      grid-template-columns: minmax(320px, 720px) minmax(260px, 340px);
+      gap: 28px;
+      align-items: center;
+    }
+
+    .board-shell {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 14px 35px var(--shadow);
+      user-select: none;
+    }
+
+    .board {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+    }
+
+    .square {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(30px, 7.2vw, 70px);
+      line-height: 1;
+    }
+
+    .square.light {
+      background: var(--light-square);
+    }
+
+    .square.dark {
+      background: var(--dark-square);
+    }
+
+    .square.highlight::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--highlight);
+      box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.5);
+      pointer-events: none;
+    }
+
+    .piece {
+      position: relative;
+      z-index: 1;
+      transform: translateY(-1%);
+      font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "Arial Unicode MS", serif;
+      filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.25));
+    }
+
+    .white-piece {
+      color: #f7f7f7;
+      text-shadow:
+        -1px -1px 0 #333,
+         1px -1px 0 #333,
+        -1px  1px 0 #333,
+         1px  1px 0 #333;
+    }
+
+    .black-piece {
+      color: #252525;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.12);
+    }
+
+    .coord-file,
+    .coord-rank {
+      position: absolute;
+      z-index: 2;
+      font-size: clamp(10px, 1.4vw, 15px);
+      font-weight: 700;
+      pointer-events: none;
+    }
+
+    .coord-file {
+      right: 5px;
+      bottom: 3px;
+    }
+
+    .coord-rank {
+      left: 5px;
+      top: 3px;
+    }
+
+    .square.light .coord-file,
+    .square.light .coord-rank {
+      color: var(--dark-square);
+    }
+
+    .square.dark .coord-file,
+    .square.dark .coord-rank {
+      color: var(--light-square);
+    }
+
+    .panel {
+      background: linear-gradient(180deg, var(--panel-2), var(--panel));
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 14px 35px var(--shadow);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      margin: 0 0 22px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .prompt {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    button.answer {
+      appearance: none;
+      border: none;
+      border-radius: 8px;
+      background: var(--button);
+      color: var(--text);
+      font: inherit;
+      font-size: 20px;
+      font-weight: 700;
+      padding: 16px 10px;
+      cursor: pointer;
+      transition:
+        transform 0.08s ease,
+        background 0.12s ease;
+    }
+
+    button.answer:hover {
+      background: var(--button-hover);
+    }
+
+    button.answer:active {
+      transform: scale(0.98);
+    }
+
+    .feedback {
+      min-height: 28px;
+      margin: 18px 0 6px;
+      font-weight: 700;
+      font-size: 17px;
+    }
+
+    .feedback.correct {
+      color: #a8dd73;
+    }
+
+    .feedback.wrong {
+      color: #ff8585;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      background: rgba(0, 0, 0, 0.18);
+      border-radius: 8px;
+      padding: 12px 8px;
+      text-align: center;
+    }
+
+    .stat-value {
+      display: block;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .stat-label {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .hint {
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+
+    .performance {
+      margin-top: 22px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .performance-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .performance-title {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .performance-window {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      background: rgba(0, 0, 0, 0.16);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    #timeChart {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-dot,
+    .legend-line {
+      display: inline-block;
+      flex: 0 0 auto;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d6d6d6;
+    }
+
+    .legend-line {
+      width: 18px;
+      height: 3px;
+      border-radius: 2px;
+      background: #81b64c;
+    }
+
+    .speed-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .speed-stat {
+      background: rgba(0, 0, 0, 0.14);
+      border-radius: 8px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+
+    .speed-value {
+      display: block;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .speed-label {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 820px) {
+      body {
+        align-items: flex-start;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        order: -1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="board-shell" aria-label="Chess board">
+      <div id="board" class="board"></div>
+    </section>
+
+    <aside class="panel">
+      <h1>Chess Square Trainer</h1>
+      <p class="subtitle">
+        Identify the highlighted square. White is at the bottom.
+      </p>
+
+      <div class="prompt">Which square is highlighted?</div>
+      <div id="answers" class="answers"></div>
+      <div id="feedback" class="feedback" aria-live="polite"></div>
+
+      <div class="stats">
+        <div class="stat">
+          <span id="score" class="stat-value">0</span>
+          <span class="stat-label">Correct</span>
+        </div>
+        <div class="stat">
+          <span id="attempts" class="stat-value">0</span>
+          <span class="stat-label">Attempts</span>
+        </div>
+        <div class="stat">
+          <span id="streak" class="stat-value">0</span>
+          <span class="stat-label">Streak</span>
+        </div>
+      </div>
+
+
+      <section class="performance">
+        <div class="performance-header">
+          <span class="performance-title">Answer speed</span>
+          <span class="performance-window">Rolling 10-minute window</span>
+        </div>
+
+        <div class="chart-wrap">
+          <canvas id="timeChart" aria-label="Answer time graph"></canvas>
+        </div>
+
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-dot"></span>Individual answers</span>
+          <span class="legend-item"><span class="legend-line"></span>Rolling average</span>
+        </div>
+
+        <div class="speed-stats">
+          <div class="speed-stat">
+            <span id="currentTime" class="speed-value">—</span>
+            <span class="speed-label">Last answer</span>
+          </div>
+          <div class="speed-stat">
+            <span id="averageTime" class="speed-value">—</span>
+            <span class="speed-label">10-min average</span>
+          </div>
+          <div class="speed-stat">
+            <span id="bestTime" class="speed-value">—</span>
+            <span class="speed-label">Best time</span>
+          </div>
+        </div>
+      </section>
+
+      <p class="hint">
+        Files run from <strong>a</strong> to <strong>h</strong> left to right.
+        Ranks run from <strong>1</strong> to <strong>8</strong> bottom to top.
+      </p>
+    </aside>
+  </main>
+
+  <script>
+    const boardElement = document.getElementById("board");
+    const answersElement = document.getElementById("answers");
+    const feedbackElement = document.getElementById("feedback");
+    const scoreElement = document.getElementById("score");
+    const attemptsElement = document.getElementById("attempts");
+    const streakElement = document.getElementById("streak");
+    const currentTimeElement = document.getElementById("currentTime");
+    const averageTimeElement = document.getElementById("averageTime");
+    const bestTimeElement = document.getElementById("bestTime");
+    const timeChart = document.getElementById("timeChart");
+    const chartContext = timeChart.getContext("2d");
+
+    const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+    const ranks = [8, 7, 6, 5, 4, 3, 2, 1];
+
+    const pieces = {
+      a8: ["♜", "black-piece"], b8: ["♞", "black-piece"],
+      c8: ["♝", "black-piece"], d8: ["♛", "black-piece"],
+      e8: ["♚", "black-piece"], f8: ["♝", "black-piece"],
+      g8: ["♞", "black-piece"], h8: ["♜", "black-piece"],
+
+      a7: ["♟", "black-piece"], b7: ["♟", "black-piece"],
+      c7: ["♟", "black-piece"], d7: ["♟", "black-piece"],
+      e7: ["♟", "black-piece"], f7: ["♟", "black-piece"],
+      g7: ["♟", "black-piece"], h7: ["♟", "black-piece"],
+
+      a2: ["♙", "white-piece"], b2: ["♙", "white-piece"],
+      c2: ["♙", "white-piece"], d2: ["♙", "white-piece"],
+      e2: ["♙", "white-piece"], f2: ["♙", "white-piece"],
+      g2: ["♙", "white-piece"], h2: ["♙", "white-piece"],
+
+      a1: ["♖", "white-piece"], b1: ["♘", "white-piece"],
+      c1: ["♗", "white-piece"], d1: ["♕", "white-piece"],
+      e1: ["♔", "white-piece"], f1: ["♗", "white-piece"],
+      g1: ["♘", "white-piece"], h1: ["♖", "white-piece"]
+    };
+
+    const squares = [];
+    let currentSquare = "";
+    let score = 0;
+    let attempts = 0;
+    let streak = 0;
+    let locked = false;
+    let questionStartedAt = performance.now();
+    const answerHistory = [];
+    const WINDOW_MS = 10 * 60 * 1000;
+    const ROLLING_COUNT = 5;
+
+
+    function formatSeconds(seconds) {
+      return `${seconds.toFixed(seconds < 10 ? 2 : 1)}s`;
+    }
+
+    function pruneHistory(now = performance.now()) {
+      while (
+        answerHistory.length > 0 &&
+        now - answerHistory[0].timestamp > WINDOW_MS
+      ) {
+        answerHistory.shift();
+      }
+    }
+
+    function rollingAverageAt(index) {
+      const start = Math.max(0, index - ROLLING_COUNT + 1);
+      const slice = answerHistory.slice(start, index + 1);
+      return slice.reduce((sum, item) => sum + item.seconds, 0) / slice.length;
+    }
+
+    function resizeCanvas() {
+      const rect = timeChart.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      timeChart.width = Math.max(1, Math.round(rect.width * ratio));
+      timeChart.height = Math.max(1, Math.round(rect.height * ratio));
+      chartContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+      drawChart();
+    }
+
+    function drawChart() {
+      const width = timeChart.clientWidth;
+      const height = timeChart.clientHeight;
+      if (!width || !height) return;
+
+      const now = performance.now();
+      pruneHistory(now);
+
+      chartContext.clearRect(0, 0, width, height);
+
+      const padding = { left: 34, right: 12, top: 12, bottom: 24 };
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
+
+      const visibleTimes = answerHistory.map(item => item.seconds);
+      const maxObserved = visibleTimes.length ? Math.max(...visibleTimes) : 5;
+      const maxY = Math.max(5, Math.ceil(maxObserved / 2) * 2);
+
+      chartContext.strokeStyle = "rgba(255,255,255,0.10)";
+      chartContext.lineWidth = 1;
+      chartContext.fillStyle = "rgba(255,255,255,0.55)";
+      chartContext.font = "11px Arial";
+
+      for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (plotHeight * i / 4);
+        const value = maxY * (1 - i / 4);
+
+        chartContext.beginPath();
+        chartContext.moveTo(padding.left, y);
+        chartContext.lineTo(width - padding.right, y);
+        chartContext.stroke();
+
+        chartContext.fillText(`${value.toFixed(value < 10 ? 1 : 0)}s`, 3, y + 4);
+      }
+
+      const labels = ["10m", "7.5m", "5m", "2.5m", "now"];
+      labels.forEach((label, i) => {
+        const x = padding.left + plotWidth * i / 4;
+        chartContext.fillText(label, x - (i === 4 ? 20 : 9), height - 7);
+      });
+
+      if (answerHistory.length === 0) {
+        chartContext.fillStyle = "rgba(255,255,255,0.35)";
+        chartContext.font = "13px Arial";
+        chartContext.textAlign = "center";
+        chartContext.fillText(
+          "Your answer times will appear here",
+          padding.left + plotWidth / 2,
+          padding.top + plotHeight / 2
+        );
+        chartContext.textAlign = "left";
+        return;
+      }
+
+      const xFor = timestamp =>
+        padding.left + plotWidth * (1 - (now - timestamp) / WINDOW_MS);
+
+      const yFor = seconds =>
+        padding.top + plotHeight * (1 - Math.min(seconds, maxY) / maxY);
+
+      chartContext.fillStyle = "#d6d6d6";
+      answerHistory.forEach(item => {
+        const x = xFor(item.timestamp);
+        const y = yFor(item.seconds);
+
+        chartContext.beginPath();
+        chartContext.arc(x, y, 3.2, 0, Math.PI * 2);
+        chartContext.fill();
+      });
+
+      if (answerHistory.length > 1) {
+        chartContext.strokeStyle = "#81b64c";
+        chartContext.lineWidth = 2.5;
+        chartContext.beginPath();
+
+        answerHistory.forEach((item, index) => {
+          const x = xFor(item.timestamp);
+          const y = yFor(rollingAverageAt(index));
+
+          if (index === 0) {
+            chartContext.moveTo(x, y);
+          } else {
+            chartContext.lineTo(x, y);
+          }
+        });
+
+        chartContext.stroke();
+      }
+    }
+
+    function updateSpeedStats(lastSeconds) {
+      pruneHistory();
+
+      currentTimeElement.textContent = formatSeconds(lastSeconds);
+
+      const average = answerHistory.reduce(
+        (sum, item) => sum + item.seconds,
+        0
+      ) / answerHistory.length;
+
+      const best = Math.min(...answerHistory.map(item => item.seconds));
+
+      averageTimeElement.textContent = formatSeconds(average);
+      bestTimeElement.textContent = formatSeconds(best);
+    }
+
+    function buildBoard() {
+      ranks.forEach((rank, rowIndex) => {
+        files.forEach((file, columnIndex) => {
+          const name = `${file}${rank}`;
+          const square = document.createElement("div");
+          square.className = `square ${(rowIndex + columnIndex) % 2 === 0 ? "light" : "dark"}`;
+          square.dataset.square = name;
+
+          if (pieces[name]) {
+            const piece = document.createElement("span");
+            piece.className = `piece ${pieces[name][1]}`;
+            piece.textContent = pieces[name][0];
+            square.appendChild(piece);
+          }
+
+          if (rank === 1) {
+            const fileLabel = document.createElement("span");
+            fileLabel.className = "coord-file";
+            fileLabel.textContent = file;
+            square.appendChild(fileLabel);
+          }
+
+          if (file === "a") {
+            const rankLabel = document.createElement("span");
+            rankLabel.className = "coord-rank";
+            rankLabel.textContent = rank;
+            square.appendChild(rankLabel);
+          }
+
+          boardElement.appendChild(square);
+          squares.push(name);
+        });
+      });
+    }
+
+    function randomItem(array) {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+
+    function shuffle(array) {
+      const copy = [...array];
+
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+
+      return copy;
+    }
+
+    function getDistractors(correctSquare) {
+      const correctFile = correctSquare[0];
+      const correctRank = correctSquare[1];
+      const candidates = squares.filter(square => square !== correctSquare);
+
+      const nearby = candidates.filter(square =>
+        square[0] === correctFile || square[1] === correctRank
+      );
+
+      const distractors = [];
+
+      while (nearby.length > 0 && distractors.length < 2) {
+        const choice = randomItem(nearby);
+        if (!distractors.includes(choice)) {
+          distractors.push(choice);
+        }
+        nearby.splice(nearby.indexOf(choice), 1);
+      }
+
+      while (distractors.length < 3) {
+        const choice = randomItem(candidates);
+        if (!distractors.includes(choice)) {
+          distractors.push(choice);
+        }
+      }
+
+      return distractors;
+    }
+
+    function highlightSquare(squareName) {
+      document.querySelectorAll(".square.highlight").forEach(square => {
+        square.classList.remove("highlight");
+      });
+
+      const target = document.querySelector(`[data-square="${squareName}"]`);
+      target.classList.add("highlight");
+    }
+
+    function updateStats() {
+      scoreElement.textContent = score;
+      attemptsElement.textContent = attempts;
+      streakElement.textContent = streak;
+    }
+
+    function newQuestion() {
+      locked = false;
+      feedbackElement.textContent = "";
+      feedbackElement.className = "feedback";
+
+      let nextSquare = randomItem(squares);
+
+      while (nextSquare === currentSquare) {
+        nextSquare = randomItem(squares);
+      }
+
+      currentSquare = nextSquare;
+      highlightSquare(currentSquare);
+      questionStartedAt = performance.now();
+
+      const choices = shuffle([
+        currentSquare,
+        ...getDistractors(currentSquare)
+      ]);
+
+      answersElement.innerHTML = "";
+
+      choices.forEach(choice => {
+        const button = document.createElement("button");
+        button.className = "answer";
+        button.type = "button";
+        button.textContent = choice;
+        button.addEventListener("click", () => submitAnswer(choice));
+        answersElement.appendChild(button);
+      });
+    }
+
+    function submitAnswer(choice) {
+      if (locked) return;
+      locked = true;
+
+      const answeredAt = performance.now();
+      const answerSeconds = Math.max(0.05, (answeredAt - questionStartedAt) / 1000);
+      answerHistory.push({
+        timestamp: answeredAt,
+        seconds: answerSeconds
+      });
+      pruneHistory(answeredAt);
+      updateSpeedStats(answerSeconds);
+      drawChart();
+
+      attempts++;
+
+      if (choice === currentSquare) {
+        score++;
+        streak++;
+        feedbackElement.textContent = "Correct!";
+        feedbackElement.className = "feedback correct";
+      } else {
+        streak = 0;
+        feedbackElement.textContent = `That was ${currentSquare}.`;
+        feedbackElement.className = "feedback wrong";
+      }
+
+      updateStats();
+
+      window.setTimeout(newQuestion, 450);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    window.setInterval(drawChart, 1000);
+
+    buildBoard();
+    updateStats();
+    newQuestion();
+    resizeCanvas();
+  </script>
+</body>
+</html>
