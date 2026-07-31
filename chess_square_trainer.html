@@ -36,6 +36,35 @@
       align-items: center;
       justify-content: center;
       padding: 24px;
+      position: relative;
+    }
+
+    .back-button {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 20;
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      background: rgba(49, 46, 43, 0.92);
+      color: var(--text);
+      padding: 8px 12px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+
+    .back-button:hover {
+      background: rgba(87, 82, 77, 0.96);
+      transform: translateY(-1px);
+    }
+
+    .back-button:active {
+      transform: scale(0.98);
     }
 
     .app {
@@ -366,6 +395,8 @@
   </style>
 </head>
 <body>
+  <button class="back-button" type="button" onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href = 'index.html'; }" aria-label="Go back">← Back</button>
+
   <main class="app">
     <section class="board-shell" aria-label="Chess board">
       <div id="board" class="board"></div>
