@@ -109,6 +109,9 @@
     canvas {
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      display: block;
+      max-width: 100%;
+      height: auto;
     }
     .instructions {
       margin: 20px 0;
@@ -120,9 +123,13 @@
     }
     .piano-container {
       width: 100%;
-      overflow-x: hidden; /* Remove horizontal scroll */
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      overflow-x: auto;
       margin-bottom: 20px;
       position: relative;
+      padding: 0 12px;
     }
     .countdown {
       position: absolute;
@@ -521,9 +528,13 @@ const vocalPatterns = {
     
     // P5.js setup function
     function setup() {
-      let canvas = createCanvas(2000, 300); // Adjust the width to fit the entire piano
+      const desiredWidth = Math.min(1800, Math.max(720, windowWidth - 80));
+      let canvas = createCanvas(desiredWidth, 300);
       canvas.parent('pianoContainer');
+      canvas.style('display', 'block');
       piano = new Piano();
+      piano.updateCanvasSize(width, height);
+      windowResized();
       
       // Create a more piano-like synthesizer
       const pianoSynth = new Tone.PolySynth(Tone.Synth).toDestination();
@@ -586,6 +597,14 @@ const vocalPatterns = {
       document.getElementById('stopButton').addEventListener('click', stopExercise);
     }
     
+    function windowResized() {
+      const desiredWidth = Math.min(1800, Math.max(720, windowWidth - 80));
+      resizeCanvas(desiredWidth, 300);
+      if (piano) {
+        piano.updateCanvasSize(width, height);
+      }
+    }
+
     function draw() {
       background(240);
       piano.display();
@@ -855,6 +874,16 @@ const vocalPatterns = {
         this.activeKey = null;
         this.rangeKeys = { min: null, max: null };
         this.visibleWidth = 850;
+        this.canvasWidth = 900;
+        this.canvasHeight = 300;
+        this.displayOffsetX = 0;
+        this.totalWidth = this.calculateTotalWidth();
+      }
+
+      updateCanvasSize(width, height) {
+        this.canvasWidth = width;
+        this.canvasHeight = height;
+        this.startY = Math.max(40, (this.canvasHeight - this.whiteKeyHeight) / 2);
         this.totalWidth = this.calculateTotalWidth();
       }
       
@@ -869,25 +898,11 @@ const vocalPatterns = {
       }
       
       display() {
-        // Calculate visible area offsets for scrolling
-        let scrollOffset = 0;
-        // if (this.activeKey) {
-        //   const noteIndex = allNotes.indexOf(this.activeKey);
-        //   let whiteKeyIndex = 0;
-        //   for (let i = 0; i < noteIndex; i++) {
-        //     if (!allNotes[i].includes('#')) {
-        //       whiteKeyIndex++;
-        //     }
-        //   }
-        //   const keyX = this.startX + whiteKeyIndex * this.whiteKeyWidth;
-          
-        //   // Center the active key
-        //   scrollOffset = keyX - this.visibleWidth / 2;
-        //   scrollOffset = constrain(scrollOffset, 0, this.totalWidth - this.visibleWidth);
-        // }
+        const offsetX = Math.max(0, (this.canvasWidth - this.totalWidth) / 2);
+        this.displayOffsetX = offsetX;
         
         push();
-        translate(-scrollOffset, 0);
+        translate(offsetX, 0);
         
         // Draw white keys first
         let x = this.startX;
@@ -964,6 +979,8 @@ const vocalPatterns = {
       }
       
       getNoteAtPosition(mouseX, mouseY) {
+        const adjustedMouseX = mouseX - this.displayOffsetX;
+
         // Check if mouse is within piano area
         if (mouseY < this.startY || mouseY > this.startY + this.whiteKeyHeight) {
           return null;
@@ -972,7 +989,6 @@ const vocalPatterns = {
         // Check black keys first (they're on top)
         if (mouseY < this.startY + this.blackKeyHeight) {
           let x = this.startX;
-          let whiteKeyIndex = 0;
           
           for (let i = 0; i < allNotes.length; i++) {
             const note = allNotes[i];
@@ -980,12 +996,11 @@ const vocalPatterns = {
               // If next note exists and is a black key
               if (i + 1 < allNotes.length && allNotes[i + 1].includes('#')) {
                 const blackKeyX = x + this.whiteKeyWidth - this.blackKeyWidth / 2;
-                if (mouseX >= blackKeyX && mouseX <= blackKeyX + this.blackKeyWidth) {
+                if (adjustedMouseX >= blackKeyX && adjustedMouseX <= blackKeyX + this.blackKeyWidth) {
                   return allNotes[i + 1]; // Return the black key note
                 }
               }
               x += this.whiteKeyWidth;
-              whiteKeyIndex++;
             }
           }
         }
@@ -995,7 +1010,7 @@ const vocalPatterns = {
         for (let i = 0; i < allNotes.length; i++) {
           const note = allNotes[i];
           if (!note.includes('#')) {
-            if (mouseX >= x && mouseX <= x + this.whiteKeyWidth) {
+            if (adjustedMouseX >= x && adjustedMouseX <= x + this.whiteKeyWidth) {
               return note;
             }
             x += this.whiteKeyWidth;
