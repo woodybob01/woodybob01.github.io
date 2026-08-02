@@ -429,6 +429,30 @@
             text-shadow: 1px 1px #ff00cc, -1px -1px #00fff7;
             animation: glitch-btn 1.2s infinite alternate-reverse;
         }
+
+        .form-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: nowrap;
+            margin-top: 10px;
+        }
+
+        .form-actions #formStatus {
+            margin: 0;
+            text-align: left;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .form-actions #formStatus p {
+            margin: 0;
+            padding: 2px 4px;
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.2);
+            color: #00fff7;
+            font-weight: 700;
+        }
         
         .submit-btn:hover {
             transform: translateY(-3px) scale(1.05) skew(-2deg, 2deg);
@@ -741,9 +765,11 @@
                     <label for="message">Message</label>
                     <textarea id="message" name="message" required></textarea>
                 </div>
-                <button type="submit" class="submit-btn">Send Message</button>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Send Message</button>
+                    <div id="formStatus"></div>
+                </div>
             </form>
-            <div id="formStatus" style="margin-top: 20px; text-align: center;"></div>
         </div>
             <div id="backgroundText" class="background-text-container"></div>
 
@@ -879,11 +905,47 @@ document.addEventListener('DOMContentLoaded', function() {
 // Contact form handling
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('contactForm');
+    const formStatus = document.getElementById('formStatus');
+
+    if (!form || !formStatus) return;
+
     form.addEventListener('submit', function(event) {
-        setTimeout(function() {
-            document.getElementById('formStatus').innerHTML =
+        event.preventDefault();
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton ? submitButton.textContent : '';
+
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Sending...';
+        }
+
+        formStatus.innerHTML = '<p style="color: #00fff7;">Sending your message...</p>';
+
+        fetch(form.action, {
+            method: form.method,
+            headers: { 'Accept': 'application/json' },
+            body: new FormData(form)
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('Unable to send message right now.');
+            }
+
+            form.reset();
+            formStatus.innerHTML =
                 '<p style="color: #00fff7;">Message sent! Thank you for reaching out.</p>';
-        }, 1000);
+        })
+        .catch(function() {
+            formStatus.innerHTML =
+                '<p style="color: #ff4d4d;">Sorry, something went wrong. Please try again.</p>';
+        })
+        .finally(function() {
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+            }
+        });
     });
 });
 
