@@ -184,6 +184,13 @@
       flex-wrap: wrap;
     }
 
+    .settings .full-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 8px;
+    }
     .check-pill {
       position: relative;
       display: inline-flex;
@@ -631,7 +638,7 @@
             </label>
           </div>
 
-          <div class="mode-group">
+            <div class="mode-group">
             <label for="modeSelect">Practice mode</label>
             <select id="modeSelect">
               <option value="char-to-morse">Character → Morse</option>
@@ -639,6 +646,30 @@
               <option value="random">Random direction</option>
             </select>
           </div>
+
+            <div class="full-row" aria-hidden="false">
+              <label class="check-pill">
+                <input id="multipleChoiceToggle" type="checkbox" />
+                Multiple choice
+              </label>
+            </div>
+
+            <div class="full-row" aria-hidden="false" style="align-items:center; gap:12px;">
+              <div style="display:flex; gap:8px; align-items:center; min-width:220px;">
+                <label style="color:var(--muted); font-weight:800; font-size:0.9rem;">Practice range</label>
+              </div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <span id="rangeLowLabel" style="min-width:34px; text-align:center; font-weight:800;">A</span>
+                  <div style="flex:1; position:relative;">
+                    <input id="rangeLow" type="range" value="0" min="0" max="25" step="1" style="width:100%;" />
+                    <input id="rangeHigh" type="range" value="25" min="0" max="25" step="1" style="position:absolute; left:0; top:0; width:100%; pointer-events:auto;" />
+                  </div>
+                  <span id="rangeHighLabel" style="min-width:34px; text-align:center; font-weight:800;">Z</span>
+                </div>
+                <div style="color:var(--muted); font-size:0.82rem;">Select a contiguous subset of enabled characters to practice.</div>
+              </div>
+            </div>
         </div>
 
         <div class="question-area">
@@ -673,6 +704,10 @@
             <button class="small-button" id="backspaceButton" type="button">Backspace</button>
             <button class="small-button" id="skipButton" type="button">Skip</button>
             <button class="small-button" id="enterButton" type="button">Enter</button>
+          </div>
+
+          <div id="multipleChoiceRow" class="multiple-choice-row" style="display:none; margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+            <!-- multiple choice buttons injected here -->
           </div>
 
           <div class="correction" id="correction" aria-live="polite">
@@ -763,7 +798,12 @@
       lettersToggle: document.getElementById("lettersToggle"),
       numbersToggle: document.getElementById("numbersToggle"),
       symbolsToggle: document.getElementById("symbolsToggle"),
+      multipleChoiceToggle: document.getElementById("multipleChoiceToggle"),
       modeSelect: document.getElementById("modeSelect"),
+      rangeLow: document.getElementById("rangeLow"),
+      rangeHigh: document.getElementById("rangeHigh"),
+      rangeLowLabel: document.getElementById("rangeLowLabel"),
+      rangeHighLabel: document.getElementById("rangeHighLabel"),
       directionLabel: document.getElementById("directionLabel"),
       prompt: document.getElementById("prompt"),
       promptCaption: document.getElementById("promptCaption"),
@@ -774,6 +814,7 @@
       backspaceButton: document.getElementById("backspaceButton"),
       enterButton: document.getElementById("enterButton"),
       skipButton: document.getElementById("skipButton"),
+      multipleChoiceRow: document.getElementById("multipleChoiceRow"),
       correction: document.getElementById("correction"),
       flash: document.getElementById("flash"),
       toast: document.getElementById("toast"),
@@ -834,6 +875,9 @@
         if (typeof settings.letters === "boolean") els.lettersToggle.checked = settings.letters;
         if (typeof settings.numbers === "boolean") els.numbersToggle.checked = settings.numbers;
         if (typeof settings.symbols === "boolean") els.symbolsToggle.checked = settings.symbols;
+        if (typeof settings.multipleChoice === "boolean") els.multipleChoiceToggle.checked = settings.multipleChoice;
+        if (typeof settings.rangeLow === "number") state.rangeLowIndex = settings.rangeLow;
+        if (typeof settings.rangeHigh === "number") state.rangeHighIndex = settings.rangeHigh;
         if (["char-to-morse", "morse-to-char", "random"].includes(settings.mode)) {
           els.modeSelect.value = settings.mode;
         }
@@ -858,6 +902,9 @@
           letters: els.lettersToggle.checked,
           numbers: els.numbersToggle.checked,
           symbols: els.symbolsToggle.checked,
+          multipleChoice: els.multipleChoiceToggle.checked,
+          rangeLow: Number.isFinite(state.rangeLowIndex) ? state.rangeLowIndex : 0,
+          rangeHigh: Number.isFinite(state.rangeHighIndex) ? state.rangeHighIndex : 0,
           mode: els.modeSelect.value
         }
       };
@@ -869,12 +916,75 @@
       }
     }
 
+    function pickDistractors(correct, pool, count) {
+      const choices = pool.filter(c => c !== correct);
+      const out = [];
+      const max = Math.min(count, choices.length);
+      while (out.length < max) {
+        const idx = Math.floor(Math.random() * choices.length);
+        const pick = choices.splice(idx, 1)[0];
+        out.push(pick);
+      }
+      return out;
+    }
+
+    function renderMultipleChoice() {
+      const enabled = getEnabledCharacters();
+      const mc = els.multipleChoiceRow;
+      mc.innerHTML = "";
+      if (!els.multipleChoiceToggle.checked || !state.currentCharacter) {
+        mc.style.display = "none";
+        return;
+      }
+
+      mc.style.display = "flex";
+
+      const correct = state.currentCharacter;
+      const distractors = pickDistractors(correct, enabled, 3);
+      const options = [correct, ...distractors].sort(() => Math.random() - 0.5);
+
+      for (const opt of options) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "small-button";
+        btn.dataset.answer = state.currentDirection === "char-to-morse" ? MORSE[opt] : opt;
+        btn.textContent = state.currentDirection === "char-to-morse" ? displayMorse(MORSE[opt]) : opt;
+        btn.addEventListener("click", () => {
+          const answer = btn.dataset.answer;
+          submitAnswer(answer);
+        });
+        mc.appendChild(btn);
+      }
+    }
+
     function getEnabledCharacters() {
-      const enabled = [];
-      if (els.lettersToggle.checked) enabled.push(...LETTERS);
-      if (els.numbersToggle.checked) enabled.push(...NUMBERS);
-      if (els.symbolsToggle.checked) enabled.push(...SYMBOLS);
-      return enabled;
+      const base = [];
+      if (els.lettersToggle.checked) base.push(...LETTERS);
+      if (els.numbersToggle.checked) base.push(...NUMBERS);
+      if (els.symbolsToggle.checked) base.push(...SYMBOLS);
+
+      if (!Number.isFinite(state.rangeLowIndex) || !Number.isFinite(state.rangeHighIndex)) {
+        // initialize defaults
+        state.rangeLowIndex = 0;
+        state.rangeHighIndex = Math.max(0, base.length - 1);
+      }
+
+      const low = Math.max(0, Math.min(state.rangeLowIndex, base.length - 1));
+      const high = Math.max(0, Math.min(state.rangeHighIndex, base.length - 1));
+
+      if (base.length === 0) return base;
+
+      const l = Math.min(low, high);
+      const h = Math.max(low, high);
+      return base.slice(l, h + 1);
+    }
+
+    function getEnabledCharactersBase() {
+      const base = [];
+      if (els.lettersToggle.checked) base.push(...LETTERS);
+      if (els.numbersToggle.checked) base.push(...NUMBERS);
+      if (els.symbolsToggle.checked) base.push(...SYMBOLS);
+      return base;
     }
 
     function ensureAGroupIsEnabled(changedToggle) {
@@ -882,6 +992,46 @@
       changedToggle.checked = true;
       showToast("At least one character group must stay enabled.");
       return false;
+    }
+
+    function updateSliderBounds() {
+      const base = getEnabledCharactersBase();
+      const max = Math.max(0, base.length - 1);
+      if (!els.rangeLow || !els.rangeHigh) return;
+
+      els.rangeLow.min = 0;
+      els.rangeLow.max = max;
+      els.rangeHigh.min = 0;
+      els.rangeHigh.max = max;
+
+      // clamp stored indices
+      if (!Number.isFinite(state.rangeLowIndex)) state.rangeLowIndex = 0;
+      if (!Number.isFinite(state.rangeHighIndex)) state.rangeHighIndex = max;
+      state.rangeLowIndex = Math.max(0, Math.min(state.rangeLowIndex, max));
+      state.rangeHighIndex = Math.max(0, Math.min(state.rangeHighIndex, max));
+
+      els.rangeLow.value = state.rangeLowIndex;
+      els.rangeHigh.value = state.rangeHighIndex;
+      updateSliderLabels();
+    }
+
+    function updateSliderLabels() {
+      const base = getEnabledCharactersBase();
+      const max = Math.max(0, base.length - 1);
+      if (!els.rangeLowLabel || !els.rangeHighLabel) return;
+
+      const lowIdx = Math.max(0, Math.min(Number(els.rangeLow.value || 0), max));
+      const highIdx = Math.max(0, Math.min(Number(els.rangeHigh.value || max), max));
+
+      const lowChar = base.length ? base[lowIdx] : "—";
+      const highChar = base.length ? base[highIdx] : "—";
+
+      els.rangeLowLabel.textContent = lowChar;
+      els.rangeHighLabel.textContent = highChar;
+
+      // store indices in state for slicing
+      state.rangeLowIndex = lowIdx;
+      state.rangeHighIndex = highIdx;
     }
 
     function getItemStat(character) {
@@ -946,6 +1096,7 @@
     function updateQuestionUI() {
       const character = state.currentCharacter;
       const code = MORSE[character];
+      const mcEnabled = els.multipleChoiceToggle && els.multipleChoiceToggle.checked;
 
       if (state.currentDirection === "char-to-morse") {
         els.directionLabel.textContent = "Enter the Morse code";
@@ -953,11 +1104,19 @@
         els.prompt.classList.remove("morse");
         els.promptCaption.textContent = `Answer length: ${code.length}`;
 
-        els.morseEntry.classList.remove("inactive");
-        els.characterEntry.classList.add("inactive");
-        els.dotButton.disabled = false;
-        els.dashButton.disabled = false;
-        els.backspaceButton.disabled = false;
+        if (mcEnabled) {
+          els.morseEntry.classList.add("inactive");
+          els.characterEntry.classList.add("inactive");
+          els.dotButton.disabled = true;
+          els.dashButton.disabled = true;
+          els.backspaceButton.disabled = true;
+        } else {
+          els.morseEntry.classList.remove("inactive");
+          els.characterEntry.classList.add("inactive");
+          els.dotButton.disabled = false;
+          els.dashButton.disabled = false;
+          els.backspaceButton.disabled = false;
+        }
       } else {
         els.directionLabel.textContent = "Type the matching character";
         els.prompt.textContent = displayMorse(code);
@@ -965,13 +1124,18 @@
         els.promptCaption.textContent = "One character";
 
         els.morseEntry.classList.add("inactive");
-        els.characterEntry.classList.remove("inactive");
+        if (mcEnabled) {
+          els.characterEntry.classList.add("inactive");
+        } else {
+          els.characterEntry.classList.remove("inactive");
+          requestAnimationFrame(() => els.characterEntry.focus({ preventScroll: true }));
+        }
         els.dotButton.disabled = true;
         els.dashButton.disabled = true;
         els.backspaceButton.disabled = true;
-
-        requestAnimationFrame(() => els.characterEntry.focus({ preventScroll: true }));
       }
+
+      renderMultipleChoice();
     }
 
     function displayMorse(code) {
@@ -1285,7 +1449,8 @@
     }
 
     function handleCategoryChange(event) {
-      ensureAGroupIsEnabled(event.target);
+      if (!ensureAGroupIsEnabled(event.target)) return;
+      updateSliderBounds();
       saveState();
       hideCorrection();
       nextQuestion();
@@ -1306,6 +1471,34 @@
     els.lettersToggle.addEventListener("change", handleCategoryChange);
     els.numbersToggle.addEventListener("change", handleCategoryChange);
     els.symbolsToggle.addEventListener("change", handleCategoryChange);
+
+    if (els.multipleChoiceToggle) {
+      els.multipleChoiceToggle.addEventListener("change", () => {
+        saveState();
+        hideCorrection();
+        updateQuestionUI();
+      });
+    }
+
+    if (els.rangeLow && els.rangeHigh) {
+      const onRangeInput = () => {
+        // Ensure low <= high by swapping if needed
+        let low = Number(els.rangeLow.value);
+        let high = Number(els.rangeHigh.value);
+        if (low > high) {
+          const tmp = low; low = high; high = tmp;
+        }
+        els.rangeLow.value = low;
+        els.rangeHigh.value = high;
+        updateSliderLabels();
+        saveState();
+        hideCorrection();
+        nextQuestion();
+      };
+
+      els.rangeLow.addEventListener("input", onRangeInput);
+      els.rangeHigh.addEventListener("input", onRangeInput);
+    }
 
     els.modeSelect.addEventListener("change", () => {
       saveState();
@@ -1373,6 +1566,8 @@
     }, 1000);
 
     loadState();
+    updateSliderBounds();
+    updateSliderLabels();
     updateStats();
     nextQuestion();
   </script>
